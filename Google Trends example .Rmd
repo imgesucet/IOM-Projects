@@ -1,0 +1,119 @@
+---
+title: "Google Tends Example"
+author: "Imgesu Cetin"
+date: "7/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages('gtrendsR')
+library(gtrendsR)
+
+```
+
+#rudimentary descriptive statistics
+```{r}
+#Whether the 2015 “refugee crisis” increased search behaviors
+ 
+#Google Trends for 'migration' for Syria, Afganistan, Iraq. 
+
+data("countries")
+
+#change of google trends hit for keyword "migration"
+res<-gtrends('migration',geo=c("SY","AF","IQ"))
+plot(res)
+
+```
+#comment: I assume that the countries that do not use english as search words have close to 0 during some times.This may mean we should be searching for Arabic key words. Perhaps use google translate.
+
+
+```{r}
+#keyword searches for migration,immigration,asylum for Syria
+
+res<-gtrends(c("migration","immigration","asylum"),geo="SY")
+plot(res)
+
+#this looks quite noisy.
+```
+
+
+```{r}
+#google searches for Afganistan
+
+
+#unique(countries)
+#unique(countries$country_code)
+res<-gtrends("migration",geo="AF")
+
+plot(res)
+```
+```{r}
+#google searches for H1 for Syria
+
+
+
+res<-gtrends(c("H1","flight"),geo="SY")
+
+plot(res)
+
+#something interesting is that search intensity drops down to 0 during some times durinig the years...
+```
+
+```{r}
+#preview of the data: to see how it is stores.(year-month-day) 
+res
+```
+
+#some interesting notes
+#when using google trends API we can see hits according to region. For example Damascus Governorate had the most of the searches for H1 visa. 
+
+
+
+```{r}
+#using reshape to reshape data
+library(reshape2)
+
+#getting gtrends hits for the keyword visa for Germany,France,Italy,Spain. for all times (20)
+
+google.trends.visa <- gtrends(c("visa"),geo = c("DE","FR","IT","ES"), time = "all")
+
+plot(google.trends.visa)
+
+google.trends = dcast(google.trends.visa, date ~ keyword + geo, value.var = "hits")
+
+#looks as though the data for European countries are more stable, not many 0's. I assume the countries where English is not prominently used have more lower hits of english migration key words. Prehaps we can use Arabic to see if this changes. 
+```
+
+
+```{r}
+#looking at the data
+google.trends.visa <- gtrends(c("visa"),geo = c("DE","FR","IT","ES"), time = "today+5-y")
+
+head(google.trends.visa)
+```
+
+#visualize migration keyword for the countries
+```{r}
+google.trends.migration <- gtrends(c("migration"),geo = c("DE","FR","IT","ES"), time = "all")
+
+plot(google.trends.migration)
+```
+
+Migration data
+#Data cleaning
+```{r}
+#loading data for data cleaning
+migrationData <- read_csv("~/Documents/projects/UN-Project/Google Trends Project/migrationData.csv")
+
+migrationData
+
+#I think we should have variables for inflow migration, outflow migration.Needs data cleaning. How should we structure the data that is best for our forecasting?
+```
+```{r}
+
+```
+
