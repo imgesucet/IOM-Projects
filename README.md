@@ -1,10 +1,9 @@
 # IOM-Projects
 
 
-How to push/pull github repository to your computer via Rstudo
+How to push/pull github repository to your computer via Rstudio
 # step 1:
-check if you have github set up.
-  #you can do this by typing 'git' in your shell. If so, they you are ready to get started
+check if you have github set up. You can do this by typing 'git' in your shell. If so, they you are ready to get started
 # step 2: 
 start by creating a new project. file> new project> version control. press git, and copy and paste our repository URL which is https://github.com/imgesucet/IOM-Projects.git
 # step 3:
