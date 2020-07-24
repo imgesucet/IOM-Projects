@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 data("countries")
 data("categories")
-library(gtrendsR)
+library(gtrendsR) # wulala
 
 #categories that we can use.
 #202	Visa & Immigration id code is=	555
