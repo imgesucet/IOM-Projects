@@ -1,5 +1,5 @@
 ---
-title: "google trends_example"
+title: "google trends_example with"
 author: "Imgesu Cetin"
 date: "7/22/2020"
 output: html_document
@@ -11,6 +11,154 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #setting up work environment
+
+data("countries")
+data("categories")
+library(gtrendsR)
+
+#categories that we can use.
+#202	Visa & Immigration id code is=	555
+#Immigration Policy & Border Issues	1313
+```
+
+# Trying with two origin countries, Syria and Iraq, two destination countries, Turkey and Germany.
+
+# For Origin Country Syria:
+```{r}
+#with the keyword 'Germany' for the geolocation of Syria, for all time, which is ever since 2004
+#arabic iso language code is 'ar'
+#
+res<-gtrends('germany',geo=c("SY"),time='all',category = 555,hl='ar')
+plot(res)
+#when using a catagory for this code with out making it arabic it didn't work. when i changed to hl='ar' it worked. 
+```
+```{r}
+#keyword 'Turkey'(destination) for Syria(origin) for the catagory of Visa and immigration
+res<-gtrends('turkey',geo=c("SY"),time='all',category = 555,hl='ar')
+plot(res)
+
+#when I put 'go to Turkey' it didn't work. However, when I put, 'Turkey' it works.
+
+```
+
+```{r}
+#keyword 'Turkey'(destination) for Syria(origin) for the catagory of Visa and immigration, when they search it in english, default version
+res<-gtrends('turkey',geo=c("SY"),time='all',category = 555)
+plot(res)
+
+#looks the same as when I change the language to arabic,
+```
+
+```{r}
+
+#"migrate to Turkey"
+#"go to Turkey" do not work
+#"immigrate to Turkey'
+
+res<-gtrends('turkey',geo=c("SY"),time='all',category = 555 ,hl='ar')
+plot(res)
+#when I changed the dates to defa
+
+#I put the same code, and I did not get the same information?
+
+```
+```{r}
+#when I add both the keywords "Germany" and "Turkey"(both destination countries) for geolocation of "Syria"(orgin country) for the catagory of visa and migration, and when the language code is 'arabic'
+
+res<-gtrends(c('turkey','germany'),geo=c("SY"),time='all',category = 555 ,hl='ar')
+plot(res)
+
+#when both keywords, germany and turkey are used, we can see that germany has a higher hit proportion compared to Turkey for the orgin country Syria
+```
+
+```{r}
+#when I add both the keywords "Germany" and "Turkey"(both destination countries) for geolocation of "Syria"(orgin country) for the catagory of visa and migration, and when the language code is 'english'.
+
+res<-gtrends(c('turkey','germany'),geo=c("SY"),time='all')
+plot(res)
+
+#gives the same results as when the lanugae code was 'arabic'
+#howver when I change the catagory I see that there is alot of volitility, this may be becayse searches for 'germany' and ;turkey' maybe searched in other motives aside for migration purposes. 
+```
+
+# For Origin Country Iraq:
+
+
+
+```{r}
+#for origin country Iraq, when keyword is Turkey for All catagories.
+#for time all and no language
+res<-gtrends('turkey',geo=c("IQ"), time ="all")
+plot(res)
+
+```
+
+
+```{r}
+#for origin country Iraq, when keyword is Turkey for the catagory of Visa and Immigration and when language is English.
+res<-gtrends('turkey',geo=c("IQ"),time='all',category = 555)
+plot(res)
+
+#nothing for when language is default at english. 
+```
+
+```{r}
+#for origin country Iraq, when keyword is Turkey for the catagory of Visa and Immigration and when language is Arabic.
+
+res<-gtrends('turkey',geo=c("IQ"),time='all',category = 555,hl='ar')
+plot(res)
+
+#some kind of influence of trends for migration? There is a spike after 2013?
+```
+
+#for Germany
+```{r}
+#using 'go to germany' does work 
+
+res<-gtrends('go to germany',geo=c("IQ")
+plot(res)
+```
+
+
+```{r}
+#for origin country Iraq, when keyword is Turkey for the catagory of Visa and Immigration and when language is Arabic.
+
+res<-gtrends('germany',geo=c("IQ"),time='all',category = 555,hl='ar')
+plot(res)
+
+#some kind of influence of trends for migration? There is a spike after 2013?
+```
+
+```{r}
+#looking at the data
+head(res)
+```
+
+```{r}
+#for the keyword 'germany' when we do not limit to catagories of Visa and Immigration
+res<-gtrends('germany',geo=c("IQ"),time='all')
+plot(res)
+```
+
+```{r}
+res<-gtrends(c('germany','turkey'),geo=c("IQ"),time='all', category = 555,hl='ar')
+plot(res)
+
+```
+
+
+```{r}
+#comparing keyword 'germany' to 'turkey' for all catagories on the web for all time.
+
+res<-gtrends(c('germany','turkey'),geo=c("IQ"),time='all')
+plot(res)
+```
+
+# prediction
+
+```{r}
+#turn into time series
+is.data.frame(res$interest_over_time$hits)
 ```
 
 ```{r}
