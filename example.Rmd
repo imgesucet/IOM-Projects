@@ -55,7 +55,7 @@ plot(res)
 #"go to Turkey" do not work
 #"immigrate to Turkey'
 
-res<-gtrends('turkey',geo=c("SY"),time='all',category = 555 ,hl='ar')
+res<-gtrends('immigrate to turkey',geo=c("SY"),time='all',hl='ar')
 plot(res)
 #when I changed the dates to defa
 
@@ -81,8 +81,27 @@ plot(res)
 #howver when I change the catagory I see that there is alot of volitility, this may be becayse searches for 'germany' and ;turkey' maybe searched in other motives aside for migration purposes. 
 ```
 
+```{r}
+res<-gtrends(c('germany'),geo=c("SY"),time='all',onlyInterest = TRUE)
+plot(res)
+
+res
+#doesn't change the hits.
+
+```
+
+
+
+```{r}
+res<-gtrends(c('turkey'),geo=c("SY"),time='all')
+plot(res)
+```
+
 # For Origin Country Iraq:
 
+```{r}
+
+```
 
 
 ```{r}
@@ -136,8 +155,8 @@ head(res)
 
 ```{r}
 #for the keyword 'germany' when we do not limit to catagories of Visa and Immigration
-res<-gtrends('germany',geo=c("IQ"),time='all')
-plot(res)
+res<-gtrends('gotogermany',geo=c("IQ"))
+
 ```
 
 ```{r}
@@ -150,8 +169,12 @@ plot(res)
 ```{r}
 #comparing keyword 'germany' to 'turkey' for all catagories on the web for all time.
 
-res<-gtrends(c('germany','turkey'),geo=c("IQ"),time='all')
+res<-gtrends(c('germany','turkey'),geo=("SY"),
+             time=("2010-01-02 2019-01-01"),category = c(555,1313))
+
 plot(res)
+
+#use both catagories that make sence
 ```
 
 # prediction
