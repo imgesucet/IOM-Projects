@@ -111,10 +111,6 @@ plot(res)
 
 # For Origin Country Iraq:
 
-```{r}
-
-```
-
 
 ```{r}
 #for origin country Iraq, when keyword is Turkey for All catagories.
@@ -148,7 +144,7 @@ res
 ```{r}
 #using 'go to germany' does work 
 
-res<-gtrends('go to germany',geo=c("IQ")
+res<-gtrends ("go to germany",geo=c("IQ")
 plot(res)
 ```
 
@@ -165,12 +161,6 @@ plot(res)
 ```{r}
 #looking at the data
 head(res)
-```
-
-```{r}
-#for the keyword 'germany' when we do not limit to catagories of Visa and Immigration
-res<-gtrends('gotogermany',geo=c("IQ"))
-
 ```
 
 
@@ -205,7 +195,8 @@ timeseries
 #taking aggregate for the years
 
 #basic plot to show over the years, it seems as though there is an steady increase after 2010-2015
-newtimeseries<-aggregate(hits ~ Year+keyword+geo, data=timeseries,median)
+#not sure how we should do this.. mean or median? -any suggestions?
+newtimeseries<-aggregate(hits ~ Year+keyword, data=timeseries,mean)
 
 newtimeseries
 
@@ -223,13 +214,17 @@ newtimeseries%>%
 ```
 
 # Forecasting
+
 https://www.christopheryee.org/blog/mining-google-trends-data-with-r-featuring-gtrendsr/
 
 This is a good website to check out for forecasting google trend searches
 
 ```{r}
-#I used prophet for easy forecastin. We can expand with other methods.
-install.packages('prophet')
+#dependencies for the prophet package
+library(devtools)
+library(rstan)
+#I used prophet for easy forecasting. We can expand with other methods.
+#devtools::install.packages('prophet')
 library(prophet)
 
 #Prophet is a procedure for forecasting time series data based on an additive model where non-linear trends are fit with yearly, weekly, and daily seasonality, plus holiday effects. It works best with time series that have strong seasonal effects and several seasons of historical data. Prophet is robust to missing data and shifts in the trend, and typically handles outliers well.
@@ -239,7 +234,7 @@ library(prophet)
 # for simple computation I have used US as origin and CANADA as destination. As an english speaking country, we are able to search 
 ```{r}
 
-res<-gtrends(c('migrate to canada','migrate to mexico'),geo=c("US"),time='all')
+res<-gtrends(c('migrate to canada','migrate to mexico'),geo=c("US"))
 plot(res)
 
 
@@ -250,6 +245,7 @@ timeseries <- as_tibble(res$interest_over_time) %>%
   mutate(date = ymd(date)) %>% # CONVERT DATE FORMAT
   filter(date < Sys.Date() - 7) # REMOVE "NOISY" DATA FROM LAST SEVEN DAYS
 
+timeseries
 ```
 
 #graph over time
@@ -265,8 +261,58 @@ timeseries %>%
        color = NULL,
        title = "Google Trends: interest over time (US)")
 ```
+# clean data
+```{r}
+can_timeseries <- timeseries %>% 
+  filter( keyword == 'migrate to canada') %>% 
+  select(date, hits) %>% 
+  mutate(date = ymd(date)) %>% 
+  rename(ds = date, y = hits) %>% # CONVERT COLUMN HEADERS FOR PROPHET
+  arrange(ds) # ARRANGE BY DATE
+
+```
 
 ```{r}
+#look at data
+can_timeseries
+```
 
+
+# build model
+
+```{r}
+can_m <- prophet(can_timeseries)
+can_future <- make_future_dataframe(can_m, periods = 365) # PREDICT 365 DAYS
+can_ftdata <- as_tibble(predict(can_m, can_future))
+
+```
+
+#forecast
+```{r}
+can_forecast <- can_ftdata %>% 
+  mutate(ds = ymd(ds),
+         segment = case_when(ds > Sys.Date()-7 ~ 'forecast',
+                             TRUE ~ 'actual'), # SEGMENT ACTUAL VS FORECAST DATA
+         keyword = paste0("migrate to canada")) %>% 
+  select(ds, segment, yhat_lower, yhat, yhat_upper, keyword) %>% 
+  left_join(can_timeseries) # JOIN ACTUAL DATA
+
+```
+
+```{r}
+can_forecast %>% 
+  rename(date = ds,
+         actual = y) %>% 
+  ggplot() +
+  geom_line(aes(date, actual)) + # PLOT ACTUALS DATA
+  geom_point(data = subset(can_forecast, segment == 'forecast'),
+            aes(ds, yhat), color = 'salmon', size = 0.1) + # PLOT PREDICTION DATA
+  geom_ribbon(data = subset(can_forecast, segment == 'forecast'),
+            aes(ds, ymin = yhat_lower, ymax = yhat_upper), 
+            fill = 'salmon', alpha = 0.3) + # SHADE PREDICTION DATA REGION
+  scale_y_continuous(limits = c(0,100)) +
+  theme_bw() +
+  labs(x = NULL, y = "Relative Search Interest",
+       title = "Google Trends: interest over time for \"migrate to canada\" (US)")
 ```
 
