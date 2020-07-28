@@ -1,0 +1,169 @@
+---
+title: "Google Tends Example"
+author: "Murtiza"
+date: "7/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages('gtrendsR')
+library(gtrendsR)
+library("dplyr")
+library("stringr")
+library(ggplot2)
+
+```
+
+# Lets try with catogory
+
+```{r}
+#for origin country Iraq, when keyword is Turkey for the catagory of Visa and Immigration and when language is Arabic.
+
+res<-gtrends('turkey',geo=c("IQ"),time='all',category = 555,hl='ar')
+plot(res)
+
+#some kind of influence of trends for migration? There is a spike after 2013?
+```
+
+```{r}
+GT_DE <- gtrends(c("migration to Germany"),geo = "DE", time = "now 7-d",
+                 onlyInterest = TRUE)
+head(GT_DE)
+
+Cat <- force(categories)
+Cat_interest <- Cat %>% filter(Cat$name %>% str_detect("migration"))
+
+GT_DE <- gtrends(geo = "DE", time = "today+5-y",
+                 onlyInterest = TRUE, category = 1313)
+GT_DE_dutch <- gtrends(geo = "DE", time = "today+5-y",
+                 onlyInterest = TRUE, category = 1313, hl = "de")
+data("hl")
+```
+
+Methodology
+```{r}
+# our methodology for the time being
+GT_IQ_GE_01<-gtrends('Germany',geo=c("IQ"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+
+# Bilateral
+GT_IQ_GE_02<-gtrends(c("visa Germany","work Germany", "migrant Germany"),geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+
+#Univariate
+GT_IQ_GE_03<-gtrends("Migration",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+
+# Destination
+GT_IQ_GE_04 <-gtrends("Germany",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+
+```
+
+Here we are taking the average of the yearly search hits
+Iraq VS Germany, Category = "Visa & Immigration"
+```{r}
+GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+```
+Iraq VS Germany, Category = "Immigration Policy & Border Issues"
+```{r}
+GT_IQ_GE_eg_2<-gtrends('Germany',geo=c("IQ"),time='2004-01-01 2018-01-01',category = 1313,hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year_2 <- GT_IQ_GE_eg_2 %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         1313),][[1]][1])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year_2, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+```
+
+I also tried with different countries, it seems the data is far from the found truth. Our new methodology might not work or need to be optimized.
+
+Lets try with other scenarios.
+("visa Germany","work Germany", "migrant Germany")
+
+```{r}
+# Bilateral
+GT_IQ_GE_02_year <- GT_IQ_GE_02[[1]] %>% group_by(date, geo) %>% summarise(hits_average = sum(hits)) %>% ungroup() %>% 
+  mutate(Year =str_extract(date, "^.{4}")) %>% group_by(Year, geo) %>% summarise(hits_average = mean(hits_average))
+  
+ggplot(data=GT_IQ_GE_02_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+```
+Univarriate with origin country
+"Migration"
+```{r}
+# Here I found some non-numeric values (typos in the data), so I cleaned
+GT_IQ_GE_03[[1]] %>%  filter(str_detect(date,"^2013")) 
+# Univarriate
+GT_IQ_GE_03_year <- GT_IQ_GE_03[[1]]  %>% 
+  mutate(Year =str_extract(date, "^.{4}")) %>% 
+  mutate(hits = gsub("[^0-9.-]", "", hits)) %>% 
+  group_by(Year, keyword,geo) %>% 
+  summarise(hits_average = mean(as.numeric(hits)))
+
+
+ggplot(data=GT_IQ_GE_03_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+```
+
+Destination 
+"Germany"
+
+```{r}
+# Here I found some non-numeric values (typos in the data), so I cleaned
+GT_IQ_GE_04[[1]] %>%  filter(str_detect(date,"^2013")) 
+# Univarriate
+GT_IQ_GE_04_year <- GT_IQ_GE_04[[1]]  %>% 
+  mutate(Year =str_extract(date, "^.{4}")) %>% 
+  mutate(hits = gsub("[^0-9.-]", "", hits)) %>% 
+  group_by(Year, keyword,geo) %>% 
+  summarise(hits_average = mean(as.numeric(hits)))
+
+
+ggplot(data=GT_IQ_GE_04_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+
+```
+Simple prediciton
+```{r}
+library("tseries")
+library("forecast")
+tsdata <- GT_IQ_GE_04_year %>% ungroup() %>% 
+  select(hits_average) %>% 
+  ts(start = 2004)
+
+fit <- auto.arima(tsdata,
+                            trace=T, 
+                            stepwise = T,
+                            stationary=T,
+                            approximation=FALSE,
+                            seasonal = F,
+                            lambda = 0)
+
+checkresiduals(fit)
+arima_forcast100 <- forecast::forecast(fit, h = 13, lambda = 0, biasadj = TRUE)
+autoplot(tsdata) + autolayer(arima_forcast100)
+```
+
+
