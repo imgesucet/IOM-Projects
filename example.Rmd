@@ -7,15 +7,24 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#hfksdjfkfsdfh
 ```
+
+# Google Trends Index:
+
+Google Trends is an online based and freely accessible application that provides the frequency with which the given query has been entered in the Google Search in relation to the total search volume.
+
+Each data point is divided by the total searches of the geography and time range it represents to compare relative popularity.This means that when we look at search interests over time for a topic, we’re looking at interests as a proportion of all searches on all topics on Google at the time and location.
+
+
 
 ```{r}
 #setting up work environment
 
 data("countries")
 data("categories")
-library(gtrendsR) # wulala
+library(gtrendsR) 
+library(tidyverse)
+library(lubridate)
 
 #categories that we can use.
 #202	Visa & Immigration id code is=	555
@@ -33,6 +42,7 @@ res<-gtrends('germany',geo=c("SY"),time='all',category = 555,hl='ar')
 plot(res)
 #when using a catagory for this code with out making it arabic it didn't work. when i changed to hl='ar' it worked. 
 ```
+
 ```{r}
 #keyword 'Turkey'(destination) for Syria(origin) for the catagory of Visa and immigration
 res<-gtrends('turkey',geo=c("SY"),time='all',category = 555,hl='ar')
@@ -51,6 +61,7 @@ plot(res)
 ```
 
 ```{r}
+#sentences do not work for origin country Syria
 
 #"migrate to Turkey"
 #"go to Turkey" do not work
@@ -116,8 +127,9 @@ plot(res)
 
 ```{r}
 #for origin country Iraq, when keyword is Turkey for the catagory of Visa and Immigration and when language is English.
-res<-gtrends('turkey',geo=c("IQ"),time='all',category = 555)
+res<-gtrends(c('turkey','germany'),geo=c("IQ"),time='all',hl='ar',category = 555)
 plot(res)
+
 
 #nothing for when language is default at english. 
 ```
@@ -129,6 +141,7 @@ res<-gtrends('turkey',geo=c("IQ"),time='all',category = 555,hl='ar')
 plot(res)
 
 #some kind of influence of trends for migration? There is a spike after 2013?
+res
 ```
 
 #for Germany
@@ -160,29 +173,97 @@ res<-gtrends('gotogermany',geo=c("IQ"))
 
 ```
 
-```{r}
-res<-gtrends(c('germany','turkey'),geo=c("IQ"),time='all', category = 555,hl='ar')
-plot(res)
-
-```
-
 
 ```{r}
 #comparing keyword 'germany' to 'turkey' for all catagories on the web for all time.
 
-res<-gtrends(c('germany','turkey'),geo=("SY"),
-             time=("2010-01-02 2019-01-01"),category = c(555,1313))
+res<-gtrends(c('germany','turkey'),geo=("SY"),time=("2010-01-02 2019-01-01"),category = c(555))
 
 plot(res)
 
 #use both catagories that make sence
 ```
 
-# prediction
+
+#Aggregating for each year for origin country Iraq for search terms Germany and Turkey with the category of Visa and Immigration
+```{r}
+
+res<-gtrends(c('germany','turkey'),geo=c("IQ"),time='all', category = 555, hl='ar')
+plot(res)
+
+timeseries <- as_tibble(res$interest_over_time) %>% 
+  mutate(date = ymd(date)) %>% # CONVERT DATE FORMAT
+  filter(date < Sys.Date() - 7)# taking out the past 7 days.
+
+
+#looking at the data after getting it cleaned up
+timeseries
+#seperating date
+timeseries<-separate(timeseries, "date", c("Year", "Month", "Day"), sep = "-")
+
+timeseries
+#taking aggregate for the years
+
+#basic plot to show over the years, it seems as though there is an steady increase after 2010-2015
+newtimeseries<-aggregate(hits ~ Year+keyword+geo, data=timeseries,median)
+
+newtimeseries
+
+
+```
+#ploting new aggregated yearly data
 
 ```{r}
-#turn into time series
-is.data.frame(res$interest_over_time$hits)
+library(ggplot2)
+str(newtimeseries)
+#creating plot
+newtimeseries%>%
+  ggplot()+geom_point(aes(x=Year, y=hits, color=keyword), size=1)+ scale_y_continuous(limits = c(0,100)) + scale_color_brewer(palette = 'Set2') + theme_bw() + labs(x = NULL,y ="Relative Search Interest", color = NULL, title = "Google Trends: Interet over time for origin country US")
+
+```
+
+# Forecasting
+https://www.christopheryee.org/blog/mining-google-trends-data-with-r-featuring-gtrendsr/
+
+This is a good website to check out for forecasting google trend searches
+
+```{r}
+#I used prophet for easy forecastin. We can expand with other methods.
+install.packages('prophet')
+library(prophet)
+
+#Prophet is a procedure for forecasting time series data based on an additive model where non-linear trends are fit with yearly, weekly, and daily seasonality, plus holiday effects. It works best with time series that have strong seasonal effects and several seasons of historical data. Prophet is robust to missing data and shifts in the trend, and typically handles outliers well.
+
+```
+
+# for simple computation I have used US as origin and CANADA as destination. As an english speaking country, we are able to search 
+```{r}
+
+res<-gtrends(c('migrate to canada','migrate to mexico'),geo=c("US"),time='all')
+plot(res)
+
+
+```
+# cleaning up dataframe
+```{r}
+timeseries <- as_tibble(res$interest_over_time) %>% 
+  mutate(date = ymd(date)) %>% # CONVERT DATE FORMAT
+  filter(date < Sys.Date() - 7) # REMOVE "NOISY" DATA FROM LAST SEVEN DAYS
+
+```
+
+#graph over time
+```{r}
+timeseries %>% 
+  ggplot() +
+  geom_line(aes(date, hits, color = keyword), size = 1) +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_color_brewer(palette = 'Set2') +
+  theme_bw() +
+  labs(x = NULL,
+       y = "Relative Search Interest",
+       color = NULL,
+       title = "Google Trends: interest over time (US)")
 ```
 
 ```{r}
