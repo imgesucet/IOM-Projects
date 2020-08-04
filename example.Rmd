@@ -38,9 +38,11 @@ library(lubridate)
 #with the keyword 'Germany' for the geolocation of Syria, for all time, which is ever since 2004
 #arabic iso language code is 'ar'
 #
-res<-gtrends('germany',geo=c("SY"),time='all',category = 555,hl='ar')
+res<-gtrends('germany',geo=c("SY"),time=c('2010-01-01 2019-01-01'),category = 555,hl='ar')
 plot(res)
 #when using a catagory for this code with out making it arabic it didn't work. when i changed to hl='ar' it worked. 
+res
+
 ```
 
 ```{r}

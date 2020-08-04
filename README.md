@@ -2,6 +2,22 @@
 
 # Notes
 
+-Adding a control variable to all searches to see in relative terms to another search topic. 
+
+-suggest making a flow chart of search keywords. Starting from 'jobs/work in (destination country)', 'housing in (destination country)', and 'visa in (destination country)'.
+most readings have put housing and employment the two most important push and pull factors for migration. If the country does not have any search queries for housing or employment we can just search for the destination country.
+
+https://towardsdatascience.com/using-google-trends-at-scale-1c8b902b6bfa
+
+
+
+https://towardsdatascience.com/using-google-trends-data-to-leverage-your-predictive-model-a56635355e3d
+
+-using an anchor word and scaling factor.
+-This may be hard because each anchor word may be different for each country
+
+# What is Google Trends Index 
+
 Google Trends provides an index of the volume of Google queries by geographic location and category.
 Google Trends data does not report the raw level of queries for a given search term. Rather, it reports
 a query index. The query index starts with the query share: the total query volume for search term in
@@ -33,6 +49,17 @@ to already pull what we already have in the repository you must use the pull but
 hope this helps!
 
 # Resources
+
+
+
+
 website that forecast google trends using prophet package
 https://www.christopheryee.org/blog/mining-google-trends-data-with-r-featuring-gtrendsr/
+
+Estimating migration flows using online search data
+https://beta.unglobalpulse.org/wp-content/uploads/2014/04/UNGP_ProjectSeries_Search_Migration_2014_0.pdf
+- at  the monthly level, starting from 2008-2013
+- significant correlation with actual montly migration statistics when searching in terms of 'jobs/work in destination country(city level'
+-online search data can be a proxy for intent of migration 
+
 
