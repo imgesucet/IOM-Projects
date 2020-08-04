@@ -194,6 +194,35 @@ ggplot(data=Syria_Germany_bind, aes(x=Year, y=log(Value))) +
 
 ```
 
+```{r}
+
+Filtering_migration <- function(mig_data, flows, origin,
+                                destination, type, Year){
+  
+  New_data <- mig_data %>%  
+    filter(str_detect({{flows}},"^Inflows"),{{origin}} == "Syria",
+           {{destination}} == "Germany", {{type}} == "B11",
+           {{Year}} > 2003)
+  
+  return(New_data)
+  
+}
+
+
+
+Sy_GE <- Filtering_migration(Migrationdata, 
+                             flows = Variable,
+                             origin = Country.of.birth.nationality,
+                             destination = Country, 
+                             type = VAR, Year = Year)
+
+colnames(Migrationdata)
+
+Syria_Germany <- Migrationdata %>%  filter(str_detect(Variable, "^Inflows"), Country.of.birth.nationality == "Syria", Country == "Germany", VAR == "B11",Year > 2003)
+
+```
+
+
 
 
 
