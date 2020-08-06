@@ -9,12 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r message=FALSE}
 #install.packages('gtrendsR')
 library(gtrendsR)
 library("dplyr")
 library("stringr")
 library(ggplot2)
+library("tidyverse")
+library(ggpubr)
 
 ```
 
@@ -168,61 +170,128 @@ arima_forcast100 <- forecast::forecast(fit, h = 13, lambda = 0, biasadj = TRUE)
 autoplot(tsdata) + autolayer(arima_forcast100)
 ```
 
-Comparison
+Comparison with Migration trends
 
+Data preparing
 ```{r}
-# Category
-dir()
 Migrationdata <- read.csv("migrationData.csv")
+source("Functions.R")
 
-Syria_Germany <- Migrationdata %>%  filter(str_detect(Variable, "^Inflows")) %>% filter(Country.of.birth.nationality == "Syria", Country == "Germany", VAR == "B11") %>% filter(Year > 2003)
 
-GT_IQ_GE_year_1 <- GT_IQ_GE_year %>%  filter(Year != 2018) %>% 
-  ungroup() %>% 
+Migrationdata %>% filter(str_detect(Variable, "^Inflows")) %>%
+  distinct(VAR)
+Migrationdata %>%  filter(VAR == "B13")
+
+Migrationdata_agg <- Migrationdata %>%  
+  filter(str_detect(Variable, "^Inflows")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
+
+```
+
+
+Category--- SY-Ge
+```{r warning=F, message=F}
+
+# GT data
+GT_SY_GE_01<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_1 <- Agg_yearly(GT_SY_GE_01) %>%  
+  filter(Year >2005, Year < 2018) %>% ungroup() %>% 
   select(Year, hits_average)
 
-Syria_Germany_1 <- Syria_Germany %>%  select(Year, Value)
 
-# Syria_Germany_bind <- Syria_Germany_1 %>%
-#   left_join(GT_IQ_GE_year_1, by = c("Year"))
-Syria_Germany_bind <- merge(Syria_Germany_1, GT_IQ_GE_year_1, by = "Year")
+# Migration data
+Sy_GE <- Filtering_migration(Migrationdata_agg,
+                             origin = "Syria",
+                             destination = "Germany",
+                             Year_from = 2005,
+                             Year_till = 2018)
+Sy_GE_1 <- Sy_GE %>%  select(Year, Value) %>% 
+  mutate_if(is.integer, as.character)
 
+# combine data
+Syria_Germany_bind <- Sy_GE_1 %>% 
+  left_join(GT_SY_GE_year_1, by = "Year")
+# plot
+# ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+#   geom_line(aes(y=log(Value),color = "Migration_log"), group = 1) +
+#   geom_line(aes(y = hits_average, color = "GT_search_hits"),group = 1)
+# Migration data
+p <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+  geom_line(aes(y=Value),color = "blue", group = 1) +
+  labs(y="Migration Inflow")
+# GT data
+q <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+  geom_line(aes(y = hits_average), color = "red",group = 1) +
+  labs(y = "Yearly search hits")
 
-ggplot(data=Syria_Germany_bind, aes(x=Year, y=log(Value))) +
-  geom_line(color = "red")+
-  geom_line(aes(x=Year, y = hits_average), color = "blue")
-
-```
-
-```{r}
-
-Filtering_migration <- function(mig_data, flows, origin,
-                                destination, type, Year){
-  
-  New_data <- mig_data %>%  
-    filter(str_detect({{flows}},"^Inflows"),{{origin}} == "Syria",
-           {{destination}} == "Germany", {{type}} == "B11",
-           {{Year}} > 2003)
-  
-  return(New_data)
-  
-}
-
-
-
-Sy_GE <- Filtering_migration(Migrationdata, 
-                             flows = Variable,
-                             origin = Country.of.birth.nationality,
-                             destination = Country, 
-                             type = VAR, Year = Year)
-
-colnames(Migrationdata)
-
-Syria_Germany <- Migrationdata %>%  filter(str_detect(Variable, "^Inflows"), Country.of.birth.nationality == "Syria", Country == "Germany", VAR == "B11",Year > 2003)
+ggarrange(p, q, 
+          labels = c("Migration flow", "Search hits"),
+          ncol = 1, nrow = 2)
 
 ```
 
 
+```{r message=FALSE}
+# Syria-> Germany
+# univariate
+Generate_comparison(serach_terms = "Migration", 
+                    origin_code =  "SY", 
+                    language = "ar", 
+                    origin = "Syria",
+                    destination = "Germany")
+# Destination
+Generate_comparison(serach_terms = "Germany", 
+                    origin_code =  "SY", 
+                    language = "ar", 
+                    origin = "Syria",
+                    destination = "Germany")
+
+# Syria-> Turkey
+# univariate
+Generate_comparison(serach_terms = "Migration", 
+                    origin_code =  "SY", 
+                    language = "ar", 
+                    origin = "Syria",
+                    destination = "Turkey")
+# Destination
+Generate_comparison(serach_terms = "Turkey", 
+                    origin_code =  "SY", 
+                    language = "ar", 
+                    origin = "Syria",
+                    destination = "Turkey")
+
+# Iraq-> Germany
+# univariate
+Generate_comparison(serach_terms = "Migration", 
+                    origin_code =  "IQ", 
+                    language = "ar", 
+                    origin = "Iraq",
+                    destination = "Germany")
+# Destination
+Generate_comparison(serach_terms = "Germany", 
+                    origin_code =  "IQ", 
+                    language = "ar", 
+                    origin = "Iraq",
+                    destination = "Germany")
+
+# Iraq-> Turkey
+# univariate
+Generate_comparison(serach_terms = "Migration", 
+                    origin_code =  "IQ", 
+                    language = "ar", 
+                    origin = "Iraq",
+                    destination = "Turkey")
+# Destination
+Generate_comparison(serach_terms = "Turkey", 
+                    origin_code =  "IQ", 
+                    language = "ar", 
+                    origin = "Iraq",
+                    destination = "Turkey")
+
+
+
+```
 
 
 
