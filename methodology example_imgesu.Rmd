@@ -1,0 +1,348 @@
+---
+title: "Methodology Testing"
+author: "Imgesu Cetin"
+date: "8/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#set up work envirornment
+library(gtrendsR)
+library("dplyr")
+library("stringr")
+library(ggplot2)
+library(readr)
+#install.packages('googletrends')
+
+
+
+data('countries')
+
+
+migrationData <- read_csv("migrationData copy.csv")
+migrationData
+```
+
+```{r}
+#setting up catagories
+Cat <- force(categories)
+Cat_interest <- Cat %>% filter(Cat$name %>% str_detect("migration"))
+```
+
+# Methodology for Iraq to Germany
+```{r}
+library(reshape2)
+# our methodology for the time being
+GT_IQ_GE_01<-gtrends('Germany',geo=c("IQ"),time='2004-01-01 2018-12-31',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+plot(GT_IQ_GE_01)
+
+# Bilateral
+GT_IQ_GE_02<-gtrends(c("visa Germany","work Germany", "migrant Germany"),geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+plot(GT_IQ_GE_02)
+
+
+#aggregate all searches next to each other
+google.trends = dcast(GT_IQ_GE_02$interest_over_time, date ~ unique(keyword) + geo, value.var = "hits")
+rownames(google.trends) = google.trends$date
+#preview data
+head(google.trends)
+#we may now simple take the aggregated 3 columns of 'visa Germany', 'work germany' all as colums. 
+#we may even want to expand by taking more words that may be relevant and adding to the merged data
+
+
+#Bilateral individual cases
+GT_IQ_GE_02.1<-gtrends("visa Germany", geo=c("IQ"),time='2004-01-01 2018-01-01', hl='ar', onlyInterest = TRUE)
+plot(GT_IQ_GE_02.1)
+
+GT_IQ_GE_02.2<-gtrends("migrant Germany", geo=c("IQ"),time='2004-01-01 2018-01-01', hl='ar', onlyInterest = TRUE)
+plot(GT_IQ_GE_02.2)
+
+#Univariate
+GT_IQ_GE_03<-gtrends("Migration",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+plot(GT_IQ_GE_03)
+
+# Destination
+GT_IQ_GE_04 <-gtrends("Germany",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+
+```
+
+# Trying with our proposed Methodology, with catagory=555
+
+#no results...
+```{r}
+GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+#No results with Iraq when query is 'germany'
+```
+
+# Bivariate case
+```{r}
+GT_IQ_GE_eg<-gtrends('visa Germany',geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+```
+
+# Comparing to historic Migration data to the bivariate case of 'visa germany'
+
+```{r}
+#filter through migration data for Iraq to Germany for years 2004-2018
+Iraq_Germany <- migrationData %>%  
+  filter(str_detect(Variable, "^Inflows"))%>% 
+  filter(CO2 == "IRQ", Country == "Germany", VAR == "B11")%>%
+  filter(Year > 2003)
+
+
+GT_IQ_GE_year_bivar <- GT_IQ_GE_year %>%  filter(Year != 2018) %>% 
+  ungroup() %>% 
+  select(Year, hits_average)
+
+Iraq_Germany_1 <- Iraq_Germany %>%select(Year, Value)
+Iraq_Germany_bind <- merge(Iraq_Germany_1, GT_IQ_GE_year_1, by = "Year")
+
+
+ggplot(data=Iraq_Germany_bind, aes(x=Year, y=Value)) +
+  geom_line(color = "red")+
+  geom_line(aes(x=Year, y = 3000*hits_average), color = "blue")
+
+#looks as though it does not capture actual migration data in the bivariate case for keyword 'visa germany'
+```
+
+# Bivariate case continued with both bivariate, univariate, and destination. Aggregation of all bivariate search terms into one variable.
+
+```{r}
+# adding search terms
+
+GT_IQ_GE_agg<-gtrends(c('visa Germany','work Germany','job Germany','germany','immigrate'),geo=c("IQ"),time='2005-01-01 2018-01-01',hl='ar',gprop = "web", onlyInterest = TRUE)
+#aggregate all searches next to each other
+google.trends = dcast(GT_IQ_GE_agg$interest_over_time, date ~ unique(keyword) + geo, value.var = "hits")
+rownames(google.trends) = google.trends$date
+#preview data
+google.trends
+
+#reshape data to take aggreagate according to date
+
+google.trends %>%
+  group_by(date) %>%
+  summarise(Tot.migrate = sum(google.trends[1:5]))
+
+
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+```
+
+
+# univariate case 'migration' for Iraq
+
+
+```{r}
+data('hl')
+#Univariate
+IQ_GE_uni_ar<-gtrends("الهجرة",geo=c("IQ"),time='2004-01-01 2018-01-01', onlyInterest = TRUE)
+plot(IQ_GE_uni_ar)
+
+IQ_GE_uni_en<-gtrends("immigration",geo=c("IQ"),hl='ar',time='2004-01-01 2018-01-01', onlyInterest = TRUE)
+plot(IQ_GE_uni_en)
+
+#there is a difference between when we use arabic characters and when we use latin characters and use the language ht='ar'. I'm not sure how we can overcome this.
+```
+
+# I  believe that we should take our 2004 results. 
+```{r}
+library(stringr)
+
+#filter through migration data for Iraq to Germany for years 2006-2018
+Iraq_Germany_2006.2018 <- migrationData %>%  
+  filter(str_detect(Variable, "^Inflows"))%>% 
+  filter(CO2 == "IRQ", Country == "Germany", VAR == "B11")%>%
+  filter(Year > 2003)
+
+IQ_GE_year <- IQ_GE_uni_ar$interest_over_time %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),])
+
+
+# Basic line plot with points
+ggplot(data=IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+IQ_GE_year
+
+```
+#lets compare with actual historic data
+
+```{r}
+IQ_GE_year_1 <- IQ_GE_year %>%  filter(Year != 2018) %>% 
+  ungroup() %>% 
+  select(Year, hits_average)
+
+
+
+Iraq_Germany_1 <- Iraq_Germany_2006.2018 %>%select(Year, Value)
+Iraq_Germany_bind <- merge(Iraq_Germany_1, IQ_GE_year_1, by = "Year")
+
+
+ggplot(data=Iraq_Germany_bind, aes(x=Year, y=Value)) +
+  geom_line(color = "red")+
+  geom_line(aes(x=Year, y = 2000*hits_average), color = "blue")
+
+```
+
+
+# Destination case 'Germany' for Iraq
+```{r}
+GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2005-01-01 2018-01-01', hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+
+```
+#comparing with historic migration data
+
+```{r}
+#filter through migration data for Iraq to Germany for years 2004-2018
+Iraq_Germany <- migrationData %>%  
+  filter(str_detect(Variable, "^Inflows"))%>% 
+  filter(CO2 == "IRQ", Country == "Germany", VAR == "B11")%>%
+  filter(Year > 2004)
+
+
+GT_IQ_GE_year_1 <- GT_IQ_GE_year %>%  filter(Year != 2018) %>% 
+  ungroup() %>% 
+  select(Year, hits_average)
+
+Iraq_Germany_1 <- Iraq_Germany %>%select(Year, Value)
+Iraq_Germany_bind <- merge(Iraq_Germany_1, GT_IQ_GE_year_1, by = "Year")
+
+
+ggplot(data=Iraq_Germany_bind, aes(x=Year, y=Value)) +
+  geom_line(color = "red")+
+  geom_line(aes(x=Year, y = 2000*hits_average), color = "blue")
+
+```
+
+#aggregate of all cases into one catagory.
+
+```{r}
+#adding destination,bivariate case
+IQ_GE_uni_en<-gtrends("immigration",geo=c("IQ"),hl='ar',time='2005-01-01 2018-01-01', onlyInterest = TRUE)[[1]]
+IQ_GE_uni_en <- IQ_GE_uni_en %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+IQ_GE_des<-gtrends("Germany",geo=c("IQ"),hl='ar',time='2005-01-01 2018-01-01', onlyInterest = TRUE)
+IQ_GE_des <- IQ_GE_des%>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),]
+IQ_GE_des
+
+IQ_GE_biv.1<-gtrends("visa Germany",geo=c("IQ"),hl='ar',time='2005-01-01 2018-01-01', onlyInterest = TRUE)
+IQ_GE_biv.1 <- IQ_GE_biv.1 %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+IQ_GE_biv.2<-gtrends("work Germany",geo=c("IQ"),hl='ar',time='2005-01-01 2018-01-01', onlyInterest = TRUE)[[1]]
+IQ_GE_biv.2 <- IQ_GE_biv.2 %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+
+IQ_GE_biv.3<-gtrends("immigration",geo=c("IQ"),hl='ar',time='2005-01-01 2018-01-01', onlyInterest = TRUE)[[1]]
+
+IQ_GE_biv.3 <- IQ_GE_biv.3 %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+IQ_GE_biv.3
+
+IQ_GE_cat<-gtrends("germany",geo=c("IQ"),hl='ar', category=555, time='2005-01-01 2018-01-01', onlyInterest = TRUE)[[1]]
+IQ_GE_cat <- IQ_GE_cat %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+IQ_GE_cat
+```
+
+```{r}
+#add all to one data frame
+#destinationn, univariate,bivariate
+data<-merge(GT_IQ_GE_year_1,IQ_GE_year_1, by='Year')%>% merge(IQ_GE_cat,by="Year")
+
+data
+#'germany','immigration'
+data.agg<-data%>%select(Year,hits_average.x,hits_average.y,hits_average)
+
+#this is the average of bivariate,univariate, and destination
+sum.data<-data.agg%>%
+  group_by(Year)%>%
+  summarise(sum=(hits_average.x + hits_average.y+hits_average))
+
+
+#comparing with historic data
+p <- ggplot(data=Iraq_Germany, aes(x=Year)) +
+  geom_line(aes(y=Value),color = "blue", group = 1) +
+  labs(y="Migration Inflow")
+# GT data
+q <- ggplot(data=sum.data, aes(x=Year)) +
+  geom_line(aes(y = sum), color = "red",group = 1) +
+  labs(y = "Yearly search hits")
+
+ggarrange(p, q, 
+          labels = c("Migration flow", "Search hits"),
+          ncol = 1, nrow = 2)
+
+p
+```
+```{r}
+
+```
+#when we obtain for just the category.
+```{r}
+#just the Category...
+IQ_GE_cat<-gtrends(geo=c("IQ"), category=555, time='2005-01-01 2018-01-01', onlyInterest = TRUE)
+IQ_GE_cat
+plot(IQ_GE_cat)
+IQ_GE_cat <- IQ_GE_cat$interest_over_time %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+IQ_GE_cat
+```
+
