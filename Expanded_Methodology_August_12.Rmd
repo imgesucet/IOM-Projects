@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #preparing data
-Migrationdata <- read.csv("migrationData copy.csv")
+Migrationdata <- read.csv("migrationData.csv")
 unique(Migrationdata$Variable)
 
 
@@ -40,7 +40,9 @@ Asylum_data_agg<-asylum_applications_data%>%
   group_by(`Country of origin`,`Country of asylum`,Year) %>%
   summarise(Value_asylum=sum(applied))
 
-
+str(Asylum_data_agg$Year)
+str(Migrationdata_agg_asylum$Year)
+str(Migrationdata$Year)
 ```
 
 
@@ -74,7 +76,7 @@ Filtering_migration <- function(Migrationdata_agg, origin,
   return(mig_data_New)
   
 }
-Asylum_data_agg$Year
+
 
 # Funciton for Migration data filtering
 Filtering_asylum<- function(Asylum_data_agg, origin_asylum,
