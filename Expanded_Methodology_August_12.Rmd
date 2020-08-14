@@ -2,7 +2,9 @@
 title: "Functions_new_imgesu"
 author: "Imgesu Cetin"
 date: "8/12/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -33,10 +35,10 @@ Migrationdata_agg_asylum <- Migrationdata %>%
 
 
 #asylum data from UNHCR. This data is incomplete
-asylum_applications_data <- read_csv("asylum-applications_data.csv")
+asylum_applications_UNHCR<-read_csv("asylum-applications_data.csv")
 
 
-Asylum_data_agg<-asylum_applications_data%>%
+Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
   group_by(`Country of origin`,`Country of asylum`,Year) %>%
   summarise(Value_asylum=sum(applied))
 
@@ -52,7 +54,7 @@ Agg_yearly <- function(GTdata){
   Yearly_data <- GTdata[[1]]  %>% 
     mutate(Year =str_extract(date, "^.{4}")) %>% 
     mutate(hits = gsub("[^0-9.-]", "", hits)) %>% 
-    group_by(Year, keyword,geo) %>% 
+    group_by(Year, geo) %>% 
     summarise(hits_average = mean(as.numeric(hits))) %>% ungroup()
   
   return(Yearly_data)
@@ -60,13 +62,11 @@ Agg_yearly <- function(GTdata){
   
 }
 
-
-
 # Funciton for Migration data filtering
-Filtering_migration <- function(Migrationdata_agg, origin,
+Filtering_migration <- function(mig_data, origin,
                                 destination, Year_from, Year_till){
   
-  mig_data_New <- Migrationdata_agg %>%  
+  mig_data_New <- mig_data %>%  
     filter(Country.of.birth.nationality == origin,
            Country == destination,
            Year > Year_from, Year < Year_till)
@@ -74,59 +74,55 @@ Filtering_migration <- function(Migrationdata_agg, origin,
   return(mig_data_New)
   
 }
-Asylum_data_agg$Year
 
-# Funciton for Migration data filtering
-Filtering_asylum<- function(Asylum_data_agg, origin_asylum,
-                                destination_asylum, Year_from, Year_till){
+# Funciton for Assuylum filtering
+Filtering_asylum<- function(Asylum_UNHCR_agg, origin_asylum,
+                            destination_asylum){
   
-  aslyum_data_New <- Asylum_data_agg %>%  
+  aslyum_data_New <- Asylum_UNHCR_agg %>%  
     filter(`Country of origin` == origin_asylum,
-           `Country of asylum` == destination_asylum,
-           Year > Year_from, Year < Year_till)
+           `Country of asylum` == destination_asylum)
   
   return(aslyum_data_New)
   
 }
 
 # Generate the comparison plot
-Generate_comparison <- function(serach_terms, origin_code,
-                                language, origin, destination, origin_asylum, destination_asylum){
-
+Generate_comparison <- function(serach_terms = NA, origin_code,
+                                language = "en", origin,destination,
+                                category =0,
+                                origin_asylum, destination_asylum){
+  
   # GT data
-  GT<-gtrends(serach_terms,geo=c(origin_code),
-                       time='2004-01-01 2017-12-31',hl=language,
-                       gprop = "web", onlyInterest = TRUE)
+  GT<-gtrends(keyword = serach_terms,geo=c(origin_code), category = category,
+              time='2004-01-01 2017-12-31',hl=language,
+              gprop = "web", onlyInterest = TRUE)
   
   GT_year <- Agg_yearly(GT)  %>%
     ungroup() %>% 
     select(Year, hits_average)
   # Migration data
   Migration <- Filtering_migration(Migrationdata_agg,
-                               origin,
-                               destination, 
-                               Year_from = 2005,
-                               Year_till = 2018)
+                                   origin,
+                                   destination, 
+                                   Year_from = 2005,
+                                   Year_till = 2018)
   Migration_1 <- Migration %>%  select(Year, Value) %>% 
     mutate_if(is.integer, as.character)
   
-    Asylum <- Filtering_asylum(Asylum_data_agg,
-                               origin_asylum,
-                               destination_asylum, 
-                               Year_from = 2005,
-                               Year_till = 2018)
-  Asylum_1 <- Asylum %>%  select(Year, Value_asylum) %>% 
-    mutate_if(is.integer, as.character)
+  # Assuylum data
+  Asylum_UNHCR <- Filtering_asylum(Asylum_UNHCR_agg,
+                                   origin_asylum,
+                                   destination_asylum)
+  Asylum <- Asylum_UNHCR %>%  select(Year, Value_asylum) %>% 
+    mutate(Year = as.character(Year))
   
   
   # combine data
   Migration_GT_bind <- Migration_1 %>% 
-    left_join(GT_year, by = "Year")
-  Asylum_GT_bind <- Asylum_1 %>% 
-    left_join(GT_year, by = "Year")
-    
-  Migration_GT_bind<- merge(Migration_GT_bind,Asylum_GT_bind, by ="Year")
-
+    left_join(GT_year, by = "Year") %>% 
+    left_join(Asylum, by = "Year")
+  
   p <- ggplot(data=Migration_GT_bind, aes(x=Year)) +
     geom_line(aes(y=Value),color = "blue", group = 1) +
     labs(y="Migration Inflow")
@@ -134,21 +130,28 @@ Generate_comparison <- function(serach_terms, origin_code,
   q <- ggplot(data=Migration_GT_bind, aes(x=Year)) +
     geom_line(aes(y = hits_average), color = "red",group = 1) +
     labs(y = "Yearly search hits")
-  t <-ggplot(data=Migration_GT_bind, aes(x=Year)) +
-    geom_line(aes(y = Value_asylum), color = "red",group = 1) +
-    labs(y = "Yearly search hits")
   
-  ggarrange(p, q, t, 
-            labels = c("Migration flow", "Search hits","Asylum flow"),
+  # Assuylum
+  l <- ggplot(data=Migration_GT_bind, aes(x=Year)) +
+    geom_line(aes(y = Value_asylum), color = "green",group = 1) +
+    labs(y = "Assuylum flow")
+  
+  ggarrange(p, q, l,
+            labels = c("Migration flow", "Search hits", "Assuylum application"),
             ncol = 1, nrow = 3)
-
+  
 }
 
 ```
 
 
 # Generate function
+
+*For Iraq to Germany with our multi specifications*
+
+*Just Destination*
 ```{r}
+#
 Generate_comparison(serach_terms = "Germany",
                     language = 'ar',
                     origin_code =  "IQ", 
@@ -158,10 +161,318 @@ Generate_comparison(serach_terms = "Germany",
                     destination_asylum = 'Germany')
 
 
-
 ```
-# For all other cases
-
+*Category and destination country*
 ```{r}
+#with category Visa and Immigration
+Generate_comparison(serach_terms = "Germany",
+                    category = 555,
+                    language = 'ar',
+                    origin_code =  "IQ", 
+                    origin = "Iraq",
+                    destination = "Germany",
+                    origin_asylum = 'Iraq',
+                    destination_asylum = 'Germany')
+```
+*just category for origin*
+```{r}
+Generate_comparison(
+                    category = 555,
+                    language = 'ar',
+                    origin_code =  "IQ", 
+                    origin = "Iraq",
+                    destination = "Germany",
+                    origin_asylum = 'Iraq',
+                    destination_asylum = 'Germany')
+
 ```
 
+
+# Case 1:Forced Migration Syria
+# Syria - Lebanon
+
+*Destination*
+```{r}
+
+Generate_comparison(serach_terms = "Lebanon",
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Lebanon",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Lebanon')
+
+```
+*Destination with catagory
+```{r}
+Generate_comparison(serach_terms = "Lebanon",
+                    catagory = 555,
+                    language = 'ar',
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Lebanon",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Lebanon')
+```
+
+# Syria -Jordan
+```{r}
+Generate_comparison(serach_terms = "Jordan",
+                    language = 'ar',
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Jordan",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Jordan')
+
+Generate_comparison(serach_terms = "Jordan",
+                    catagory= 555,
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Jordan",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Jordan')
+```
+
+
+# Syria -Germany
+```{r}
+Generate_comparison(serach_terms = "Jordan",
+                    language = 'ar',
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Jordan",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Jordan')
+
+Generate_comparison(serach_terms = "Jordan",
+                    catagory= 555,
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Jordan",
+                    origin_asylum = 'Syria',
+                    destination_asylum = 'Jordan')
+
+```
+
+
+# For Venezuela
+
+# Venezuela -USA
+```{r}
+
+Generate_comparison(serach_terms = "USA",
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "United Stated of America",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'United States of America')
+
+```
+
+# Venezuela -Spain
+*just Desintation*
+```{r}
+
+Generate_comparison(serach_terms = "Spain",
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+
+```
+*Destination and category*
+```{r}
+Generate_comparison(serach_terms = "Spain",
+                    category = 555,
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+
+```
+*just category*
+```{r}
+Generate_comparison(category = 555,
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+```
+
+
+# Venezuela -Spain
+*Destination*
+```{r}
+
+Generate_comparison(serach_terms = "Spain",
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+
+```
+*Destination and category*
+```{r}
+Generate_comparison(serach_terms = "Spain",
+                    category = 555,
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+```
+*Just Category*
+```{r}
+Generate_comparison(category = 555,
+                    origin_code =  "VE", 
+                    origin = "Venezuela",
+                    destination = "Spain",
+                    origin_asylum = 'Venezuela',
+                    destination_asylum = 'Spain')
+
+```
+
+# Other Cases  
+# China to USA
+```{r}
+
+Generate_comparison(serach_terms = "USA",
+                    origin_code =  "CN", 
+                    origin = "China",
+                    destination = "USA",
+                    origin_asylum = 'China',
+                    destination_asylum = 'United States of America')
+
+
+```
+
+# Mexico to USA
+```{r}
+
+Generate_comparison(serach_terms = "USA",
+                    origin_code =  "MX", 
+                    origin = "Mexico",
+                    destination = "USA",
+                    origin_asylum = 'Mexico',
+                    destination_asylum = 'United States of America')
+
+
+```
+
+# India USA
+```{r}
+
+Generate_comparison(serach_terms = "USA",
+                    origin_code =  "IN", 
+                    origin = "India",
+                    destination = "USA",
+                    origin_asylum = 'India',
+                    destination_asylum = 'United States of America')
+
+
+```
+
+# Spanish to USA
+```{r}
+
+Generate_comparison(serach_terms = "USA",
+                    origin_code =  "IN", 
+                    origin = "India",
+                    destination = "USA",
+                    origin_asylum = 'India',
+                    destination_asylum = 'United States of America')
+
+
+```
+
+# Egypt to Saudi Arabia
+```{r}
+Generate_comparison(serach_terms = "Saudi Arabia",
+                    origin_code =  "EG", 
+                    origin = "Egypt",
+                    destination = "Saudi Arabia",
+                    origin_asylum = 'Egypt',
+                    destination_asylum = 'Saudi Arabia')
+
+
+
+```
+
+
+# Morocco to Spain
+*Just Destination*
+```{r}
+Generate_comparison(serach_terms = "Spain",
+                    origin_code =  "MA", 
+                    origin = "Morocco",
+                    destination = "Spain",
+                    origin_asylum = "Morocco",
+                    destination_asylum = 'Spain')
+
+
+```
+*Destination and Category*
+```{r}
+Generate_comparison(serach_terms = "Spain",
+                    category = 555,
+                    origin_code =  "MA", 
+                    origin = "Morocco",
+                    destination = "Spain",
+                    origin_asylum = "Morocco",
+                    destination_asylum = 'Spain')
+
+```
+
+*Just category*
+```{r}
+Generate_comparison(
+                    category = 555,
+                    origin_code =  "MA", 
+                    origin = "Morocco",
+                    destination = "Spain",
+                    origin_asylum = "Morocco",
+                    destination_asylum = 'Spain')
+
+```
+
+#Algeria to France
+*Just Destination*
+```{r}
+Generate_comparison(serach_terms = "France",
+                    origin_code =  "DZ", 
+                    origin = "Algeria",
+                    destination = "France",
+                    origin_asylum = "Algeria",
+                    destination_asylum = 'France')
+
+```
+
+*Destination with category
+```{r}
+Generate_comparison(serach_terms = "France",
+                    category = 555,
+                    origin_code =  "DZ", 
+                    origin = "Algeria",
+                    destination = "France",
+                    origin_asylum = "Algeria",
+                    destination_asylum = 'France')
+
+```
+
+*Just Category*
+```{r}
+Generate_comparison(
+                    category = 555,
+                    origin_code =  "DZ", 
+                    origin = "Algeria",
+                    destination = "France",
+                    origin_asylum = "Algeria",
+                    destination_asylum = 'France')
+```
+
+#Romania - Spain
+*
