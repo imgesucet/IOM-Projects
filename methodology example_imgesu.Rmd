@@ -217,9 +217,9 @@ ggplot(data=Iraq_Germany_bind, aes(x=Year, y=Value)) +
 ```
 
 
-# Destination case 'Germany' for Iraq
+# Destination case 'Germany' for Iraq with category
 ```{r}
-GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2005-01-01 2018-01-01', hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2005-01-01 2018-01-01', hl='ar',category=555,gprop = "web", onlyInterest = TRUE)[[1]]
 GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
   summarise(hits_average = mean(hits)) %>% 
   mutate(category = Cat_interest[which(Cat_interest$id ==
@@ -232,6 +232,21 @@ ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
   geom_point()
 
 ```
+#just destination without category
+```{r}
+GT_IQ_GE_eg<-gtrends('Germany',geo=c("IQ"),time='2005-01-01 2018-01-01', hl='ar',gprop = "web", onlyInterest = TRUE)[[1]]
+GT_IQ_GE_year <- GT_IQ_GE_eg %>%  mutate(Year = str_extract(date, "^.{4}")) %>% group_by(Year, keyword, geo) %>%
+  summarise(hits_average = mean(hits)) %>% 
+  mutate(category = Cat_interest[which(Cat_interest$id ==
+                                         555),][[1]])
+
+
+# Basic line plot with points
+ggplot(data=GT_IQ_GE_year, aes(x=Year, y=hits_average, group=1)) +
+  geom_line()+
+  geom_point()
+```
+
 #comparing with historic migration data
 
 ```{r}
@@ -344,5 +359,61 @@ IQ_GE_cat <- IQ_GE_cat$interest_over_time %>%  mutate(Year = str_extract(date, "
   mutate(category = Cat_interest[which(Cat_interest$id ==
                                          555),][[1]])
 IQ_GE_cat
+```
+
+#comparing with historic data
+```{r}
+
+IQ_GE_cat <- IQ_GE_cat %>%  filter(Year != 2018) %>% 
+  ungroup() %>% 
+  select(Year, hits_average)
+
+#comparing with historic data
+p <- ggplot(data=Iraq_Germany, aes(x=Year)) +
+  geom_line(aes(y=Value),color = "blue", group = 1) +
+  labs(y="Migration Inflow")
+# GT data
+q <- ggplot(data=IQ_GE_cat, aes(x=Year)) +
+  geom_line(aes(y =hits_average), color = "red",group = 1) +
+  labs(y = "Yearly search hits")
+p
+```
+```{r}
+#no search term just category
+q
+```
+# Aggregate with just catagory and germany
+# Catagory and destination
+```{r}
+#merge with catagory,destination,
+cat_dest_data<-merge(IQ_GE_cat,GT_IQ_GE_year_1, by= 'Year')
+#cat_dest_data
+
+av_cat_des_data <-cat_dest_data%>%
+  group_by(Year)%>%
+  summarise(average=(hits_average.x + hits_average.y)/2)
+
+q <- ggplot(data=av_cat_des_data, aes(x=Year)) +
+  geom_line(aes(y =average), color = "red",group = 1) +
+  labs(y = "Yearly search hits")
+q
+```
+# aggregating with category destination and univariate case
+```{r}
+
+merged<-merge(cat_dest_data,IQ_GE_biv.3,by= 'Year')
+
+av_cat_des_uni_data <-merged%>%
+  group_by(Year)%>%
+  summarise(average=(hits_average.x + hits_average.y+hits_average)/3)
+
+q <- ggplot(data=av_cat_des_uni_data, aes(x=Year)) +
+  geom_line(aes(y =average), color = "red",group = 1) +
+  labs(y = "Yearly search hits")
+q
+```
+```{r}
+IQ_GE_cat<-gtrends(geo=c("IQ"),category = 1313, time='2005-01-01 2018-01-01', onlyInterest = TRUE)
+plot(IQ_GE_cat)
 ```
 

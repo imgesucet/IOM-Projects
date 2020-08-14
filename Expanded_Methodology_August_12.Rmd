@@ -8,11 +8,44 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-#Function
+
 ```{r}
-library(readr)
+#preparing data
+Migrationdata <- read.csv("migrationData copy.csv")
+unique(Migrationdata$Variable)
+
+
+Migrationdata %>% filter(str_detect(Variable, "^Inflows")) %>%
+  distinct(VAR)
+Migrationdata %>%  filter(VAR == "B13")
+
+Migrationdata_agg <- Migrationdata %>%  
+  filter(str_detect(Variable, "^Inflows")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
+
+#filtering OECD data for just asylum
+Migrationdata_agg_asylum <- Migrationdata %>%  
+  filter(str_detect(Variable, "^Inflows of asylum")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value_asylum = sum(Value))
+
+
+
+#asylum data from UNHCR. This data is incomplete
 asylum_applications_data <- read_csv("asylum-applications_data.csv")
 
+
+Asylum_data_agg<-asylum_applications_data%>%
+  group_by(`Country of origin`,`Country of asylum`,Year) %>%
+  summarise(Value_asylum=sum(applied))
+
+
+```
+
+
+#Function
+```{r}
 
 Agg_yearly <- function(GTdata){
   
@@ -30,10 +63,10 @@ Agg_yearly <- function(GTdata){
 
 
 # Funciton for Migration data filtering
-Filtering_migration <- function(mig_data, origin,
+Filtering_migration <- function(Migrationdata_agg, origin,
                                 destination, Year_from, Year_till){
   
-  mig_data_New <- mig_data %>%  
+  mig_data_New <- Migrationdata_agg %>%  
     filter(Country.of.birth.nationality == origin,
            Country == destination,
            Year > Year_from, Year < Year_till)
@@ -41,14 +74,15 @@ Filtering_migration <- function(mig_data, origin,
   return(mig_data_New)
   
 }
+Asylum_data_agg$Year
 
 # Funciton for Migration data filtering
-Filtering_asylum<- function(aslyum_data, origin,
-                                destination, Year_from, Year_till){
+Filtering_asylum<- function(Asylum_data_agg, origin_asylum,
+                                destination_asylum, Year_from, Year_till){
   
-  aslyum_data_New <- aslyum_data %>%  
-    filter('Country of asylum' == origin,
-           'Country of asylum' == destination,
+  aslyum_data_New <- Asylum_data_agg %>%  
+    filter(`Country of origin` == origin_asylum,
+           `Country of asylum` == destination_asylum,
            Year > Year_from, Year < Year_till)
   
   return(aslyum_data_New)
@@ -79,9 +113,9 @@ Generate_comparison <- function(serach_terms, origin_code,
     Asylum <- Filtering_asylum(Asylum_data_agg,
                                origin_asylum,
                                destination_asylum, 
-                               Year_from = 2014,
-                               Year_till = 2019)
-  Asylum_1 <- Asylum %>%  select(Year, applied) %>% 
+                               Year_from = 2005,
+                               Year_till = 2018)
+  Asylum_1 <- Asylum %>%  select(Year, Value_asylum) %>% 
     mutate_if(is.integer, as.character)
   
   
@@ -101,25 +135,32 @@ Generate_comparison <- function(serach_terms, origin_code,
     geom_line(aes(y = hits_average), color = "red",group = 1) +
     labs(y = "Yearly search hits")
   t <-ggplot(data=Migration_GT_bind, aes(x=Year)) +
-    geom_line(aes(y = Cases/ Persons), color = "red",group = 1) +
+    geom_line(aes(y = Value_asylum), color = "red",group = 1) +
     labs(y = "Yearly search hits")
   
   ggarrange(p, q, t, 
             labels = c("Migration flow", "Search hits","Asylum flow"),
-            ncol = 1, nrow = 2)
+            ncol = 1, nrow = 3)
 
 }
 
 ```
 
 
+# Generate function
 ```{r}
+Generate_comparison(serach_terms = "Germany",
+                    language = 'ar',
+                    origin_code =  "IQ", 
+                    origin = "Iraq",
+                    destination = "Germany",
+                    origin_asylum = 'Iraq',
+                    destination_asylum = 'Germany')
+
+
+
 ```
-
-
-```{r}
-```
-
+# For all other cases
 
 ```{r}
 ```
