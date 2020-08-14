@@ -475,4 +475,73 @@ Generate_comparison(
 ```
 
 #Romania - Spain
-*
+*Destintation*
+```{r}
+Generate_comparison( serach_terms = "Spain",
+                    origin_code =  "RO", 
+                    origin = "Romania",
+                    destination = "Spain",
+                    origin_asylum = "Romania",
+                    destination_asylum = 'Spain')
+```
+
+
+*Destination and Category* 
+```{r}
+Generate_comparison( serach_terms = "Spain",
+                    category = 555,
+                    origin_code =  "RO", 
+                    origin = "Romania",
+                    destination = "Spain",
+                    origin_asylum = "Romania",
+                    destination_asylum = 'Spain')
+
+```
+
+*Just Search category*
+```{r}
+Generate_comparison(
+                    category = 555,
+                    origin_code =  "RO", 
+                    origin = "Romania",
+                    destination = "Spain",
+                    origin_asylum = "Romania",
+                    destination_asylum = 'Spain')
+
+```
+#Tunisians to Italy
+
+*Destination*
+```{r}
+Generate_comparison( serach_terms = "Italy",
+                    origin_code =  "TN", 
+                    origin = "Tunisia",
+                    destination = "Italy",
+                    origin_asylum = "Tunisia",
+                    destination_asylum = 'Italy')
+
+
+```
+
+*Destination and category*
+```{r}
+Generate_comparison( serach_terms = "Italy",
+                     category = 555,
+                    origin_code =  "TN", 
+                    origin = "Tunisia",
+                    destination = "Italy",
+                    origin_asylum = "Tunisia",
+                    destination_asylum = 'Italy')
+```
+
+*Just category*
+```{r}
+Generate_comparison(
+                     category = 555,
+                    origin_code =  "TN", 
+                    origin = "Tunisia",
+                    destination = "Italy",
+                    origin_asylum = "Tunisia",
+                    destination_asylum = 'Italy')
+```
+
