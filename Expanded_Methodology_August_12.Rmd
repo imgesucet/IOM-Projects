@@ -178,7 +178,6 @@ Generate_comparison(serach_terms = "Germany",
 ```{r}
 Generate_comparison(
                     category = 555,
-                    language = 'ar',
                     origin_code =  "IQ", 
                     origin = "Iraq",
                     destination = "Germany",
@@ -241,7 +240,7 @@ Generate_comparison(serach_terms = "Jordan",
                     origin_code =  "SY", 
                     origin = "Syria",
                     destination = "Jordan",
-                    origin_asylum = 'Syria',
+                    origin_asylum = 'Syrian Arab Rep.',
                     destination_asylum = 'Jordan')
 
 Generate_comparison(serach_terms = "Jordan",
@@ -249,7 +248,7 @@ Generate_comparison(serach_terms = "Jordan",
                     origin_code =  "SY", 
                     origin = "Syria",
                     destination = "Jordan",
-                    origin_asylum = 'Syria',
+                    origin_asylum = 'Syrian Arab Rep.',
                     destination_asylum = 'Jordan')
 
 ```
@@ -369,9 +368,9 @@ Generate_comparison(serach_terms = "USA",
 Generate_comparison(serach_terms = "USA",
                     origin_code =  "IN", 
                     origin = "India",
-                    destination = "USA",
+                    destination = "United States",
                     origin_asylum = 'India',
-                    destination_asylum = 'United States of America')
+                    destination_asylum = 'United States')
 
 
 ```
@@ -382,7 +381,7 @@ Generate_comparison(serach_terms = "USA",
 Generate_comparison(serach_terms = "USA",
                     origin_code =  "IN", 
                     origin = "India",
-                    destination = "USA",
+                    destination = "United States",
                     origin_asylum = 'India',
                     destination_asylum = 'United States of America')
 
@@ -413,7 +412,7 @@ Generate_comparison(serach_terms = "Spain",
                     origin_asylum = "Morocco",
                     destination_asylum = 'Spain')
 
-
+#
 ```
 *Destination and Category*
 ```{r}
@@ -544,4 +543,15 @@ Generate_comparison(
                     origin_asylum = "Tunisia",
                     destination_asylum = 'Italy')
 ```
+
+#comments:
+1.iso code instead of country names
+2.to make all graphs work when we don't have input for other graphs
+3. How can we normalize flows.
+4. seperate types of flows from OECD
+
+#Ideas
+1. Low scale dashboard. where policy makers can visualize on the fly
+  i. 
+
 
