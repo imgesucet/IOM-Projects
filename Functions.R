@@ -1,5 +1,5 @@
 # There are some functions I built for facilitating the repetitive work.
-# Do not hesitate to ask me if there is any question. -Murtiza
+# Do not hesitate to ask me if there is any question.---Murtiza
 
 # Function for aggregating the GT data as yearly basis.
 Agg_yearly <- function(GTdata){
@@ -15,7 +15,7 @@ Agg_yearly <- function(GTdata){
   
 }
 
-# Funciton for Migration data filtering
+# Function for Migration data filtering
 Filtering_migration <- function(mig_data, origin,
                                 destination, Year_from, Year_till){
   

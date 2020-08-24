@@ -173,61 +173,65 @@ autoplot(tsdata) + autolayer(arima_forcast100)
 Comparison with Migration trends
 
 Data preparing
-```{r}
+```{r message=FALSE}
 Migrationdata <- read.csv("migrationData.csv")
 source("Functions.R")
 
-
-Migrationdata %>% filter(str_detect(Variable, "^Inflows")) %>%
-  distinct(VAR)
-Migrationdata %>%  filter(VAR == "B13")
 
 Migrationdata_agg <- Migrationdata %>%  
   filter(str_detect(Variable, "^Inflows")) %>% 
   group_by(Country.of.birth.nationality, Country, Year) %>% 
   summarise(Value = sum(Value))
 
+# Assuylum Data from UNHCR
+asylum_applications_UNHCR<-read_csv("asylum-applications_data.csv")
+
+
+Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
+  group_by(`Country of origin`,`Country of asylum`,Year) %>%
+  summarise(Value_asylum=sum(applied))
+
 ```
 
 
 Category--- SY-Ge
 ```{r warning=F, message=F}
-
-# GT data
-GT_SY_GE_01<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
-GT_SY_GE_year_1 <- Agg_yearly(GT_SY_GE_01) %>%  
-  filter(Year >2005, Year < 2018) %>% ungroup() %>% 
-  select(Year, hits_average)
-
-
-# Migration data
-Sy_GE <- Filtering_migration(Migrationdata_agg,
-                             origin = "Syria",
-                             destination = "Germany",
-                             Year_from = 2005,
-                             Year_till = 2018)
-Sy_GE_1 <- Sy_GE %>%  select(Year, Value) %>% 
-  mutate_if(is.integer, as.character)
-
-# combine data
-Syria_Germany_bind <- Sy_GE_1 %>% 
-  left_join(GT_SY_GE_year_1, by = "Year")
-# plot
-# ggplot(data=Syria_Germany_bind, aes(x=Year)) +
-#   geom_line(aes(y=log(Value),color = "Migration_log"), group = 1) +
-#   geom_line(aes(y = hits_average, color = "GT_search_hits"),group = 1)
-# Migration data
-p <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
-  geom_line(aes(y=Value),color = "blue", group = 1) +
-  labs(y="Migration Inflow")
-# GT data
-q <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
-  geom_line(aes(y = hits_average), color = "red",group = 1) +
-  labs(y = "Yearly search hits")
-
-ggarrange(p, q, 
-          labels = c("Migration flow", "Search hits"),
-          ncol = 1, nrow = 2)
+# 
+# # GT data
+# GT_SY_GE_01<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+# GT_SY_GE_year_1 <- Agg_yearly(GT_SY_GE_01) %>%  
+#   filter(Year >2005, Year < 2018) %>% ungroup() %>% 
+#   select(Year, hits_average)
+# 
+# 
+# # Migration data
+# Sy_GE <- Filtering_migration(Migrationdata_agg,
+#                              origin = "Syria",
+#                              destination = "Germany",
+#                              Year_from = 2005,
+#                              Year_till = 2018)
+# Sy_GE_1 <- Sy_GE %>%  select(Year, Value) %>% 
+#   mutate_if(is.integer, as.character)
+# 
+# # combine data
+# Syria_Germany_bind <- Sy_GE_1 %>% 
+#   left_join(GT_SY_GE_year_1, by = "Year")
+# # plot
+# # ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+# #   geom_line(aes(y=log(Value),color = "Migration_log"), group = 1) +
+# #   geom_line(aes(y = hits_average, color = "GT_search_hits"),group = 1)
+# # Migration data
+# p <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+#   geom_line(aes(y=Value),color = "blue", group = 1) +
+#   labs(y="Migration Inflow")
+# # GT data
+# q <- ggplot(data=Syria_Germany_bind, aes(x=Year)) +
+#   geom_line(aes(y = hits_average), color = "red",group = 1) +
+#   labs(y = "Yearly search hits")
+# 
+# ggarrange(p, q, 
+#           labels = c("Migration flow", "Search hits"),
+#           ncol = 1, nrow = 2)
 
 ```
 
@@ -337,47 +341,7 @@ Generate_comparison(category = 555,
 
 ```
 ```{r}
-# Assuylum Data from UNHCR
-asylum_applications_UNHCR<-read_csv("asylum-applications_data.csv")
 
-
-Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
-  group_by(`Country of origin`,`Country of asylum`,Year) %>%
-  summarise(Value_asylum=sum(applied))
-# Assuylum
-A <- Filtering_asylum(Asylum_UNHCR_agg,
-                             "Afghanistan",
-                             "Australia")
-
-A <- A %>% select(Year, Value_asylum) %>% 
-    mutate(Year = as.character(Year))
-
-str(A$Year)
-# Migration
-B <- Filtering_migration(Migrationdata_agg,
-                               "Afghanistan",
-                               "Australia", 
-                               Year_from = 2005,
-                               Year_till = 2018) %>% 
-  select(Year, Value) %>% 
-    mutate_if(is.integer, as.character)
-  
-
-
-str(B$Year)
-# GT
-GT<-gtrends(keyword = "Australia",geo=c("SY"), 
-                       time='2004-01-01 2017-12-31',
-                       gprop = "web", onlyInterest = TRUE)
-  
-GT_year <- Agg_yearly(GT)  %>%
-    ungroup() %>% 
-    select(Year, hits_average)
-  
-  
-Migration_GT_bind <- B %>% 
-    left_join(GT_year, by = "Year") %>% 
-    left_join(A, by = "Year")
 
 Generate_comparison(serach_terms = "Germany",
                     language = 'ar',
@@ -392,24 +356,320 @@ Generate_comparison(serach_terms = "Germany",
 
 
 
+Similarity check btw Migration flow and GT data
+```{r}
+# 1. Similarity: I decided to use L1 norm since it is robust to outliers.
+# 2. Normalization: Since GT data scale is fro 0-100, I normalize the data into scale from 0 to 1 and multiply 100, so we can compare the trend.
+# So the function is updated accordingly and added relative plots and arguments.
+
+```
 
 ```{r}
+# Data 
+Migrationdata <- read.csv("migrationData.csv")
+source("Functions.R")
 
-# our methodology for the time being
-GT_IQ_GE_01<-gtrends(keyword = NA,geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
-plot(GT_IQ_GE_01)
+# total migration OECD
+Migrationdata_agg <- Migrationdata %>%  
+  filter(str_detect(Variable, "^Inflows")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
+# Asylum OEDC
+Asylum_OEDC <-  Migrationdata %>% 
+  filter(str_detect(Variable, "^Inflows of asylum")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
 
-# Bilateral
-GT_IQ_GE_02<-gtrends(c("visa Germany","work Germany", "migrant Germany"),geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
-plot(GT_IQ_GE_02)
+# Assuylum Data from UNHCR
+asylum_applications_UNHCR<-read_csv("asylum-applications_data.csv")
 
-#Univariate
-GT_IQ_GE_03<-gtrends("Migration",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
 
-# Destination
-GT_IQ_GE_04 <-gtrends("Germany",geo=c("IQ"),time='2004-01-01 2018-01-01',hl='ar', onlyInterest = TRUE)
+Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
+  group_by(`Country of origin`,`Country of asylum`,Year) %>%
+  summarise(Value_asylum=sum(applied))
+
+
+
+# try the new function
+# GT data
+# 1. Category
+GT_SY_GE_01<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_1 <- Agg_yearly(GT_SY_GE_01) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_1_hits = hits_average)
+# 2. Destination
+GT_SY_GE_02<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_2 <- Agg_yearly(GT_SY_GE_02) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_2_hits = hits_average)
+
+# 3. without any search term with the category
+GT_SY_GE_03<-gtrends(geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_3 <- Agg_yearly(GT_SY_GE_03) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_3_hits = hits_average)
+
+# normalize to scale 0-100
+normalized <- function(x){
+  ((x-min(x))/(max(x)-min(x)))*100
+}
+
+# Lets try a single example of Syria to Germany
+# 1. Migration total
+Sy_GE_total <- Filtering_migration(Migrationdata_agg,
+                             origin = "Syria",
+                             destination = "Germany",
+                             Year_from = 2005,
+                             Year_till = 2018)
+Sy_GE_total_1 <- Sy_GE_total %>%  select(Year, Value) %>%
+  mutate_if(is.integer, as.character) %>% 
+  mutate(migration_flow_total = normalized(Value)) %>% 
+  select(-Value)
+
+# 2. Asylum OEDC
+Sy_GE_asylum_OEDC <- Filtering_migration(Asylum_OEDC,
+                             origin = "Syria",
+                             destination = "Germany",
+                             Year_from = 2005,
+                             Year_till = 2018)
+Sy_GE_asylum_OEDC_1 <- Sy_GE_asylum_OEDC %>%  ungroup() %>% 
+  select(Year, Value) %>%
+  mutate_if(is.integer, as.character) %>% 
+  mutate(Asylum_OEDC = normalized(Value)) %>% 
+  select(-Value)
+
+# 3. Asylum UNHCR
+Sy_GE_asylum_UNHCR <- Filtering_asylum(Asylum_UNHCR_agg,
+                             "Syrian Arab Rep.",
+                             "Germany")
+Sy_GE_asylum_UNHCR_1 <- Sy_GE_asylum_UNHCR %>% ungroup() %>% 
+  select(Year, Value_asylum) %>%
+  mutate(Year = as.character(Year),
+         Asylum_UNHCR = normalized(Value_asylum)) %>% 
+  select(-Value_asylum)
+  
+# merge the data
+Migration_GT_merge <- Sy_GE_total_1 %>% 
+    left_join(Sy_GE_asylum_OEDC_1, by = "Year") %>% 
+    left_join(Sy_GE_asylum_UNHCR_1, by = "Year") %>%
+    left_join(GT_SY_GE_year_1, by = "Year") %>% 
+    left_join(GT_SY_GE_year_2, by = "Year")%>% 
+    left_join(GT_SY_GE_year_3, by = "Year")
+
+# Asylum_UNHCR_agg %>% filter(`Country of origin` %>% str_detect("^Syrian"),str_detect(`Country of asylum`,"^G") )
+
+Scale_x <- scale_x_continuous(breaks = waiver(), n.breaks = 7)
+# Migration total
+A <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=migration_flow_total),color = "blue", group = 1) + labs(title ="Migration Inflow", y = "", x= "") + 
+  ylim(0,100) + Scale_x
+
+# Asylum OEDC
+B <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Asylum_OEDC),color = "red", group = 1) +
+  labs(title ="Asylum OECD", y = "",x= "") + ylim(0,100)+ Scale_x
+# Asylum UNHCR
+C <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Asylum_UNHCR),color = "red", group = 1) +
+  labs(title ="Asylum UNHCR", y = "",x= "") + 
+  ylim(0,100) + xlim(2014,2017)
+
+
+
+# annotate("text", x=8, y=13000, label= "boat")
+# Approach 1
+p <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Approach_1_hits),color = "Green", group = 1) +
+   ylim(0,100) 
+# Approach 2
+q <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y = Approach_2_hits), color = "black",group = 1) +
+  labs(y = "A2", x= "") + ylim(0,100)
+# Approach 3
+d <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y = Approach_3_hits), color = "navy",group = 1) +
+  labs(y = "A3", x= "") + ylim(0,100)
+
+# My_Theme = theme(
+#   axis.title.x = element_text(size = 10),
+#   axis.text.x = element_text(size = 10),
+#   axis.title.y = element_text(size = 10))
+
+ggarrange(A,B,C,
+          p +labs(y="A1", x= "")+ Scale_x,
+          p +labs(y="", x= "")+ Scale_x,
+          p + labs(y="", x= "") + xlim(2014,2017),
+          q +labs(y="A2", x= "")+ Scale_x,
+          q +labs(y="", x= "")+ Scale_x,
+          q + labs(y="", x= "") + xlim(2014,2017),
+          d +labs(y="A3", x= "")+ Scale_x,
+          d +labs(y="", x= "")+ Scale_x,
+          d + labs(y="", x= "") + xlim(2014,2017),
+          heights = c(2, 2),
+          ncol = 3, nrow = 4)
+
+# Similarity
+# similarity_1 <- 
+# 
+# library("ggrepel")
+# library(PET)
+# install.packages("PET")
+
+```
+
+```{r}
+# Data 
+Migrationdata <- read.csv("migrationData.csv")
+source("Functions.R")
+
+# total migration OECD
+Migrationdata_agg <- Migrationdata %>%  
+  filter(str_detect(Variable, "^Inflows")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
+# Asylum OEDC
+Asylum_OEDC <-  Migrationdata %>% 
+  filter(str_detect(Variable, "^Inflows of asylum")) %>% 
+  group_by(Country.of.birth.nationality, Country, Year) %>% 
+  summarise(Value = sum(Value))
+
+# Assuylum Data from UNHCR
+asylum_applications_UNHCR<-read_csv("asylum-applications_data.csv")
+
+
+Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
+  group_by(`Country of origin`,`Country of asylum`,Year) %>%
+  summarise(Value_asylum=sum(applied))
+
+
+
+# try the new function
+# GT data
+# 1. Category
+GT_SY_GE_01<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_1 <- Agg_yearly(GT_SY_GE_01) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_1_hits = hits_average)
+# 2. Destination
+GT_SY_GE_02<-gtrends('Germany',geo=c("SY"),time='2004-01-01 2018-01-01',hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_2 <- Agg_yearly(GT_SY_GE_02) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_2_hits = hits_average)
+
+# 3. without any search term with the category
+GT_SY_GE_03<-gtrends(geo=c("SY"),time='2004-01-01 2018-01-01',category = 555,hl='ar',gprop = "web", onlyInterest = TRUE)
+GT_SY_GE_year_3 <- Agg_yearly(GT_SY_GE_03) %>%
+  filter(Year >2005, Year < 2018) %>% ungroup() %>%
+  select(Year, hits_average) %>% 
+  rename(Approach_3_hits = hits_average)
+
+# normalize to scale 0-100
+normalized <- function(x){
+  ((x-min(x))/(max(x)-min(x)))*100
+}
+
+# Lets try a single example of Syria to Germany
+# 1. Migration total
+Sy_GE_total <- Filtering_migration(Migrationdata_agg,
+                             origin = "Syria",
+                             destination = "Germany",
+                             Year_from = 2005,
+                             Year_till = 2018)
+Sy_GE_total_1 <- Sy_GE_total %>%  select(Year, Value) %>%
+  mutate_if(is.integer, as.character) %>% 
+  mutate(migration_flow_total = normalized(Value)) %>% 
+  select(-Value)
+
+# 2. Asylum OEDC
+Sy_GE_asylum_OEDC <- Filtering_migration(Asylum_OEDC,
+                             origin = "Syria",
+                             destination = "Germany",
+                             Year_from = 2005,
+                             Year_till = 2018)
+Sy_GE_asylum_OEDC_1 <- Sy_GE_asylum_OEDC %>%  ungroup() %>% 
+  select(Year, Value) %>%
+  mutate_if(is.integer, as.character) %>% 
+  mutate(Asylum_OEDC = normalized(Value)) %>% 
+  select(-Value)
+
+# 3. Asylum UNHCR
+Sy_GE_asylum_UNHCR <- Filtering_asylum(Asylum_UNHCR_agg,
+                             "Syrian Arab Rep.",
+                             "Germany")
+Sy_GE_asylum_UNHCR_1 <- Sy_GE_asylum_UNHCR %>% ungroup() %>% 
+  select(Year, Value_asylum) %>%
+  mutate(Year = as.character(Year),
+         Asylum_UNHCR = normalized(Value_asylum)) %>% 
+  select(-Value_asylum)
+  
+# merge the data
+Migration_GT_merge <- Sy_GE_total_1 %>% 
+    left_join(Sy_GE_asylum_OEDC_1, by = "Year") %>% 
+    left_join(Sy_GE_asylum_UNHCR_1, by = "Year") %>%
+    left_join(GT_SY_GE_year_1, by = "Year") %>% 
+    left_join(GT_SY_GE_year_2, by = "Year")%>% 
+    left_join(GT_SY_GE_year_3, by = "Year")
+
+# Asylum_UNHCR_agg %>% filter(`Country of origin` %>% str_detect("^Syrian"),str_detect(`Country of asylum`,"^G") )
+
+Scale_x <- scale_x_continuous(breaks = waiver(), n.breaks = 7)
+# Migration total
+A <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=migration_flow_total),color = "blue", group = 1) + labs(title ="Migration Inflow", y = "", x= "") + 
+  ylim(0,100) + Scale_x
+
+# Asylum OEDC
+B <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Asylum_OEDC),color = "red", group = 1) +
+  labs(title ="Asylum OECD", y = "",x= "") + ylim(0,100)+ Scale_x
+# Asylum UNHCR
+C <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Asylum_UNHCR),color = "red", group = 1) +
+  labs(title ="Asylum UNHCR", y = "",x= "") + 
+  ylim(0,100) + xlim(2014,2017)
+
+
+
+# annotate("text", x=8, y=13000, label= "boat")
+# Approach 1
+p <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y=Approach_1_hits),color = "Green", group = 1) +
+   ylim(0,100) 
+# Approach 2
+q <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y = Approach_2_hits), color = "black",group = 1) +
+  labs(y = "A2", x= "") + ylim(0,100)
+# Approach 3
+d <- ggplot(data=Migration_GT_merge, aes(x=as.integer(Year))) +
+  geom_line(aes(y = Approach_3_hits), color = "navy",group = 1) +
+  labs(y = "A3", x= "") + ylim(0,100)
+
+# My_Theme = theme(
+#   axis.title.x = element_text(size = 10),
+#   axis.text.x = element_text(size = 10),
+#   axis.title.y = element_text(size = 10))
+
+ggarrange(A,B,C,
+          p +labs(y="A1", x= "")+ Scale_x,
+          p +labs(y="", x= "")+ Scale_x,
+          p + labs(y="", x= "") + xlim(2014,2017),
+          q +labs(y="A2", x= "")+ Scale_x,
+          q +labs(y="", x= "")+ Scale_x,
+          q + labs(y="", x= "") + xlim(2014,2017),
+          d +labs(y="A3", x= "")+ Scale_x,
+          d +labs(y="", x= "")+ Scale_x,
+          d + labs(y="", x= "") + xlim(2014,2017),
+          heights = c(2, 2),
+          ncol = 3, nrow = 4)
 
 
 
 ```
+
+
 
