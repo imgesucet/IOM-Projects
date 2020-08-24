@@ -41,7 +41,7 @@ library(lubridate)
 res<-gtrends('germany',geo=c("SY"),time=c('2010-01-01 2019-01-01'),category = 555,hl='ar')
 plot(res)
 #when using a catagory for this code with out making it arabic it didn't work. when i changed to hl='ar' it worked. 
-res
+head(res)
 
 ```
 
@@ -169,11 +169,33 @@ head(res)
 ```{r}
 #comparing keyword 'germany' to 'turkey' for all catagories on the web for all time.
 
-res<-gtrends(c('germany','turkey'),geo=("SY"),time=("2010-01-02 2019-01-01"),category = c(555))
+res<-gtrends(c('united states','turkey','greece','germany'),geo=("SY"),time=("2012-01-01 2019-01-01"))
 
 plot(res)
 
 #use both catagories that make sence
+```
+# relative metric,this is why it is important to look in relative to other searches. when looking at Turkey, germany, and the united states we can see there is a higher popularity. However, when I take out turkey, it is re-indexed for the two search queries. Which is shown bellow. 
+
+# This is why we may want to have one stable control search query for all country pairs to normalize for all our forecasts.
+
+# Ground Truth for case study PEW research:
+
+```{r}
+#for origin country turkeym for searches 'greece'
+res<-gtrends(c('united states','greece'),geo=("TR"),time=("2014-01-01 2017-01-01"))
+
+plot(res)
+
+#we are able to ground truth when we limit the date.
+filter(res$interest_over_time,keyword=='greece')
+```
+
+
+```{r}
+res<-gtrends(c('united states','greece'),geo=("SY"),time=("2012-01-01 2019-01-01"))
+
+plot(res)
 ```
 
 
@@ -235,8 +257,9 @@ library(prophet)
 
 # for simple computation I have used US as origin and CANADA as destination. As an english speaking country, we are able to search 
 ```{r}
+#with a control
 
-res<-gtrends(c('migrate to canada','migrate to mexico'),geo=c("US"))
+res<-gtrends(c('migrate to canada','migrate to mexico'),geo=c("US"),time =("2010-01-01 2019-01-01") )
 plot(res)
 
 

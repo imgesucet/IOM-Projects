@@ -174,7 +174,7 @@ Comparison with Migration trends
 
 Data preparing
 ```{r}
-Migrationdata <- read.csv("migrationData.csv")
+s
 source("Functions.R")
 
 
@@ -283,14 +283,14 @@ Generate_comparison(serach_terms = "Migration",
                     origin = "Iraq",
                     destination = "Turkey")
 # Destination
-Generate_comparison(serach_terms = "Turkey", 
+Generate_comparison(serach_terms = "Germany",
+                    category=555,
                     origin_code =  "IQ", 
-                    language = "ar", 
                     origin = "Iraq",
-                    destination = "Turkey")
+                    destination = "Germany")
 
 
-
+library(ggpubr)
 ```
 
 

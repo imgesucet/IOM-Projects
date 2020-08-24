@@ -152,7 +152,8 @@ Generate_comparison <- function(serach_terms = NA, origin_code,
 *Just Destination*
 ```{r}
 #
-Generate_comparison(serach_terms = "Germany",
+source(Functions)
+a<-Generate_comparison(serach_terms = "Germany",
                     language = 'ar',
                     origin_code =  "IQ", 
                     origin = "Iraq",

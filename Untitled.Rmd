@@ -1,0 +1,203 @@
+---
+title: "data cleaning"
+author: "Imgesu Cetin"
+date: "8/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dylpr)
+#Data
+Migrationdata <- read.csv("migrationData copy.csv")
+asylumdata<-read.csv("asylum-applications_data.csv")
+
+unique(Migrationdata$Country.of.birth.nationality)
+```
+
+```{r}
+unique(asylumdata$`Country of origin`)
+```
+
+```{r}
+#using package to standardize names
+install.packages('StandardizeText')
+
+library(StandardizeText)
+
+#standardized country names for Migration data
+Migrationdata$Country.of.birth.nationality.stand<-standardize.countrynames(Migrationdata$Country.of.birth.nationality,standard="iso",suggest="auto")
+
+Migrationdata$Country.of.birth.nationality.stand
+
+#standardize the country destination
+Migrationdata$Country.stand<-standardize.countrynames(Migrationdata$Country,standard="iso",suggest="auto")
+
+
+unique(Migrationdata$Country.stand)
+
+
+```
+
+```{r}
+#Standardize for asylum data
+asylumdata$Country.of.asylum
+
+
+asylumdata$Country.of.origin.stand<-standardize.countrynames(asylumdata$Country.of.origin,standard="iso",suggest="auto")
+
+asylumdata$Country.of.asylum.stand<-standardize.countrynames(asylumdata$Country.of.asylum,standard="iso",suggest="auto")
+
+```
+
+
+```{r}
+#new standardized varaibles
+write.csv(Migrationdata,"migrationdata_new.csv")
+write.csv(asylumdata,"asylumdata_new.csv")
+```
+
+#shiny app examples 
+```{r}
+library(shinydashboard)
+library(shiny)
+
+
+
+ui<-dashboardPage(
+    dashboardHeader(title = "Google Trends"),
+    dashboardSidebar(sidebarMenu(
+        menuItem("Chart", tabName = "chart", icon = icon("bar-chart")),
+        menuItem("Data", tabName = "data", icon = icon("table")),
+        selectInput("country", label = h5("Select Country"),
+                    choices = list("DE"="DE","AT"="AT","CH"="CH"), selected = "DE"),
+        dateRangeInput("daterange", label=h5("Date range:"),
+                       start = "2015-01-01",
+                       end = Sys.Date()-1
+        ),
+        textInput("queries", label = h5("Search Queries"),
+                  width = "100%", 
+                  value = 'nhl,nba,nfl'
+        ),
+        downloadButton("downloadData", label = "Download Data", class = NULL),
+        tags$style(type="text/css", "#downloadData {padding: 10px; margin: 20px;}")
+    )
+    ),
+    dashboardBody(
+        tabItems(
+            # First tab content
+            tabItem(tabName = "chart",
+                    plotOutput("plot1", height = 500)
+            ),
+            # Second tab content
+            tabItem(tabName = "data",
+                    dataTableOutput('data')
+            )
+        )
+    )
+)
+
+
+
+
+## server.R ##
+library(shiny)
+library(shinydashboard)
+library(gtrendsR)
+library(gconnect)
+
+server<-function(input, output) {
+    yesterday <- Sys.Date()-1
+    #place your google credentials in gconnect
+    gconnect(usr = "icetin@ucsd.edu", psw = "Selin95!")
+    
+    dataInput <- reactive({
+        gtrends(query = input$queries,
+                geo = input$country,
+                start_date = input$daterange[1],
+                end_date = input$daterange[2])
+    })
+    
+    output$plot1 <- renderPlot({
+        res <- dataInput()
+        plot(res)
+    })
+    
+    output$data <- renderDataTable({
+        res <- dataInput()
+        res$trend
+    })
+    
+}
+
+shinyApp(ui,server)
+
+
+
+
+
+
+```
+
+```{r}
+library(shinydashboard)
+
+ui<-dashboardPage(
+    dashboardHeader(title = "Google Trends"),
+    
+    dashboardSidebar(sidebarMenu(
+        menuItem("Chart", tabName = "chart", icon = icon("bar-chart")),
+        selectInput("country", label = h5("Select Country"),
+                    choices = list("Germany","Syria"), selected = "Syria"),
+        selectInput("daterange", label=h5("Date"),
+                    choices = list("all",'today+5-y'), selected = "all"),
+        
+        selectInput("queries", label = h5("Search Queries"),
+                   choices=list("Syria","Germnay"),selected = "Germany" ),
+    
+    ),
+    dashboardBody(
+        tabItems(
+            # First tab content
+            tabItem(tabName = "chart",
+                    plotOutput("plot1", height = 500)
+            ),
+            
+        )
+    )))
+
+
+
+
+## server.R ##
+library(shiny)
+library(shinydashboard)
+library(gtrendsR)
+
+
+server<-function(input, output) {
+    yesterday <- Sys.Date()-1
+    
+    
+    dataInput <- reactive({
+        gtrends(keyword = input$queries,
+                geo = input$country,
+                time = input$daterange)
+    })
+    
+    output$plot1 <- renderPlot({
+        res <- dataInput()
+        plot(res)
+    })
+    
+
+    
+}
+
+shinyApp(ui,server)
+
+```
+

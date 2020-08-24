@@ -1,0 +1,93 @@
+---
+title: "app example Rmd_imgesu"
+author: "Imgesu Cetin"
+date: "8/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#data 
+
+asylum<-read.csv(')
+```
+
+```{r}
+library(shinydashboard)
+data("countries")
+migration<-read.csv('migrationdata_new.csv')
+migration$Country.of.birth.nationality
+ui<-fluidPage(
+    dashboardHeader(title = "Google Trends"),
+    titlePanel("Google Trends Index"),
+    sidebarLayout(sidebarPanel(
+        #select country
+        selectInput("geo", label = h5("Select Country"),
+                    choices = list("US","SY"), selected = "SY"),
+        selectInput("time", label=h5("Date"),
+                    choices = list("all",'today+5-y'), selected = "all"),
+        
+        selectInput("queries", label = h5("Destination"),
+                   choices=list("Syria","Germany"),selected = "Germany" ),
+        selectizeInput("Migration.origin", label = h5("Migration Data origin"),
+                   choices=unique(migration$Country.of.birth.nationality.stand),selected = "Germany" ),
+        selectizeInput("Migration.destination", label = h5("Migration Destination"),
+                   choices=unique(migration$Country.stand)),selected = "Germany"),
+        selectizeInput("Asylum.destination", label = h5("Asylum Destination"),
+                   choices=unique(asylumdata$`Country of origin`)),selected = "Germany"),
+    
+    ),
+    mainPanel(      tabsetPanel(
+        tabPanel("Plot1",plotOutput(outputId = "plot1",height=500)),
+        tabPanel("Plot2", plotOutput('plot2',height=500))
+        )
+            ),
+            
+        )
+    )
+
+
+
+
+## server.R ##
+library(shiny)
+library(shinydashboard)
+library(gtrendsR)
+
+
+server<-function(input, output) {
+
+    data("countries")
+    
+    dataInput <- reactive({
+        gtrends(keyword = input$queries,
+                geo = input$geo,
+                time = input$time)
+    })
+    
+    output$plot1 <- renderPlot({
+        res <- dataInput()
+        plot(res)
+    })
+    dataInput1<- reactive({
+      a<- migration %>%
+        filter(Country.of.birth.nationality.stand == input$Migration.destination)
+      
+    })
+    ouput$plot2<- renderPlot({
+      ggplot(dataInput1(),aes(x= Year,Value))+
+        geom_line()+
+        theme_bw()+
+        xtab
+    })
+  migration$  
+
+    
+}
+
+shinyApp(ui,server)
+```
+

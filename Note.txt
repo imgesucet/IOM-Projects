@@ -7,3 +7,24 @@ SY -> M, IQ -> I
 3. Update our literature review work to G-drive. I
 
 4. Automate the process. M
+
+<<August 7th 2020>>
+
+After our research, bivaraiate cases are not suitable for our project.
+
+1. We are gonna specify a list of key words (10) with several popularily used languages (original characters). 
+Some other languages, we are using english as a reference.
+Populare language: 10-15
+
+Question: So how we can aggregate the different key-words serach hits?
+
+2. Which method we use? we are thinking taking the average of univaiate and destination.
+
+Question: How we can justify our  method?
+
+
+
+
+2. Which method we can use? after the comparison, we think the category one is working better than others.
+
+Question: 
