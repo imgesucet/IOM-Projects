@@ -8,6 +8,7 @@ SY -> M, IQ -> I
 
 4. Automate the process. M
 
+<<<<<<< HEAD
 <<August 7th 2020>>
 
 After our research, bivaraiate cases are not suitable for our project.
@@ -28,3 +29,6 @@ Question: How we can justify our  method?
 2. Which method we can use? after the comparison, we think the category one is working better than others.
 
 Question: 
+=======
+5. Friday -> afternoon. M
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a

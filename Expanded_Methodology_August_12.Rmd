@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #preparing data
-Migrationdata <- read.csv("migrationData copy.csv")
+Migrationdata <- read.csv("migrationData.csv")
 unique(Migrationdata$Variable)
 
 
@@ -42,7 +42,9 @@ Asylum_UNHCR_agg<-asylum_applications_UNHCR%>%
   group_by(`Country of origin`,`Country of asylum`,Year) %>%
   summarise(Value_asylum=sum(applied))
 
-
+str(Asylum_data_agg$Year)
+str(Migrationdata_agg_asylum$Year)
+str(Migrationdata$Year)
 ```
 
 
@@ -74,6 +76,10 @@ Filtering_migration <- function(mig_data, origin,
   return(mig_data_New)
   
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> 9898f3adac67366e5d50a5a79b5f3e83723514fa
 
 # Funciton for Assuylum filtering
 Filtering_asylum<- function(Asylum_UNHCR_agg, origin_asylum,
@@ -200,6 +206,28 @@ Generate_comparison(serach_terms = "Lebanon",
                     destination = "Lebanon",
                     origin_asylum = 'Syria',
                     destination_asylum = 'Lebanon')
+
+Filtering_migration(Migrationdata_agg,
+                               "Syria",
+                               "Lebanon", 
+                               Year_from = 2005,
+                               Year_till = 2018)
+
+Migrationdata_agg %>% filter(Country.of.birth.nationality == "Syria", str_detect(Country,"^L"))
+
+Asylum_UNHCR_agg %>% filter(`Country of origin` %>% str_detect("^Syrian"),str_detect(`Country of asylum`,"^J") )
+
+
+Generate_comparison(serach_terms = "Jordan",
+                    category = 555,
+                    language = 'ar',
+                    origin_code =  "SY", 
+                    origin = "Syria",
+                    destination = "Jordan",
+                    origin_asylum = 'Syrian Arab Rep.',
+                    destination_asylum = 'Jordan')
+
+
 
 ```
 *Destination with catagory
