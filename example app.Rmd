@@ -407,30 +407,30 @@ server<-function(input, output) {
    # })
   #this uses the newest function
    dataInput <- reactive({
-     Dashboard_DT(Migrationdata = migration,
-                 asylum_applications_UNHCR = asylum,
-                 origin = input$Migration.origin,
-                 destination = input$Migration.destination,
-                 Year_from = 2005,
-                 Year_till = 2018,
-                 origin_asylum = input$Asylum.origin,
-                 destination_asylum = input$Asylum.destination,
-                 serach_terms = input$queries,
-                 origin_code = input$geo,
-                 language = input$lang,
-                 category = 555)
+    # Dashboard_DT(Migrationdata = migration,
+    #             asylum_applications_UNHCR = asylum,
+    #             origin = input$Migration.origin,
+    #             destination = input$Migration.destination,
+    #             Year_from = 2005,
+     #            Year_till = 2018,
+     #            origin_asylum = input$Asylum.origin,
+     #            destination_asylum = input$Asylum.destination,
+      #           serach_terms = input$queries,
+      #           origin_code = input$geo,
+      #           language = input$lang,
+       #          category = 555)
   #this uses the first original function
-    #    Generate_comparison(serach_terms = input$queries,
-     #                       origin_code = input$geo,
-      #                      language = input$lang,
-       #                     origin = input$Migration.origin,
-        #                    destination = input$Migration.destination,
-         #                   origin_asylum = input$Asylum.origin,
-          #                  destination_asylum = input$Asylum.destination)
+      Generate_comparison(serach_terms = input$queries,
+                           origin_code = input$geo,
+                            language = input$lang,
+                            origin = input$Migration.origin,
+                            destination = input$Migration.destination,
+                            origin_asylum = input$Asylum.origin,
+                            destination_asylum = input$Asylum.destination)
     })
    output$plot1<- renderPlot({
-     res<- dataInput
-    Dashboard_plot(res)
+     dataInput()
+    
     
       
     })
