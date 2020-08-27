@@ -28,6 +28,25 @@ iso<- read_excel("iso_country_lang_data.xlsx")
 str(Migrationdata$Year)
 str(asylum_applications_UNHCR$Year)
 
+unique(Migrationdata$Country)
+unique(Migrationdata$Country.of.birth.nationality)
+#standardize country names 
+library(StandardizeText)
+Migrationdata$origin.stand<-standardize.countrynames(Migrationdata$Country.of.birth.nationality,standard="iso",suggest="auto")
+Migrationdata$destination.stand<-standardize.countrynames(Migrationdata$Country,standard="iso",suggest="auto")
+#asylum data
+asylum$origin.stand<-standardize.countrynames(asylum$Country.of.origin,standard="iso",suggest="auto")
+
+asylum$destination.stand<-standardize.countrynames(asylum$Country.of.asylum,standard="iso",suggest="auto")
+
+unique(Migrationdata$origin.stand)
+write.csv(Migrationdata,"migrationdata_new.csv")
+write.csv(asylum,"asylumdata_new.csv")
+#the new variables are origin.stand and destination.stand
+```
+```{r}
+unique(asylum$origin.stand)
+asylum$
 ```
 
 ```{r}
@@ -53,7 +72,7 @@ normalized <- function(x){
 
 ####################  Total migration OECD  ####################
 # Migration total - OECD
-Migrationdata <- read_csv("migrationdata_new.csv")
+#Migrationdata <- read_csv("migrationdata_new.csv")
 Migrationdata$Year<- as.integer(Migrationdata$Year)
 # Function for Aggregating and filtering the Migration data.
 Agg_filter_migration <- function(Migrationdata, origin,
@@ -61,12 +80,12 @@ Agg_filter_migration <- function(Migrationdata, origin,
   # Detect the Inflows and aggregate
   Migrationdata_agg <- Migrationdata %>%  
     filter(str_detect(Variable, "^Inflows")) %>% 
-    group_by(Country.of.birth.nationality, Country, Year) %>% 
+    group_by(origin.stand, destination.stand, Year) %>% 
     summarise(Value = sum(Value))
   # Filter by country of origin and destination
   mig_data_1 <- Migrationdata_agg %>%  
-    filter(Country.of.birth.nationality == origin,
-           Country == destination,
+    filter(origin.stand == origin,
+           destination.stand == destination,
            Year > Year_from, Year < Year_till)
   # Normalize the migration data into 0-100 scale.
   mig_data_2 <- mig_data_1 %>%  ungroup() %>% 
@@ -89,13 +108,13 @@ Agg_filter_OECDasylum <- function(Migrationdata, origin,
   # Detect the Inflows and aggregate
   Asylum_OEDC <-  Migrationdata %>% 
     filter(str_detect(Variable, "^Inflows of asylum")) %>% 
-    group_by(Country.of.birth.nationality, Country, Year) %>% 
+    group_by(origin.stand, destination.stand, Year) %>% 
     summarise(Value = sum(Value))
   
   # Filter by country of origin and destination
   Asylum_OEDC_1 <- Asylum_OEDC %>%  
-    filter(Country.of.birth.nationality == origin,
-           Country == destination,
+    filter(origin.stand == origin,
+           destination.stand == destination,
            Year > Year_from, Year < Year_till)
   
   # Normalize the migration data into 0-100 scale.
@@ -113,7 +132,7 @@ Agg_filter_OECDasylum <- function(Migrationdata, origin,
  #                                destination="Germany", Year_from=2000, Year_till=2015)
 
 ########################## Asylum - UNHCR ###################
-asylum<-read.csv("asylum-applications_data.csv")
+#asylum<-read.csv("asylum-applications_data.csv")
 #asylum <- read.csv("asylumdata_new.csv")
 
 Agg_UNHCR_asylum<- function(asylum, origin_asylum,
@@ -121,13 +140,13 @@ Agg_UNHCR_asylum<- function(asylum, origin_asylum,
   
   # Detect the Inflows and aggregate
   Asylum_UNHCR_agg<-asylum%>%
-    group_by(Country.of.origin , Country.of.asylum , Year) %>%
+    group_by(origin.stand , destination.stand , Year) %>%
     summarise(Value_asylum=sum(applied))
   
   # Filter by country of origin and destination
   aslyum_UNHCR_1 <- Asylum_UNHCR_agg %>%  
-    filter(Country.of.origin == origin_asylum,
-           Country.of.asylum == destination_asylum)
+    filter(origin.stand == origin_asylum,
+           destination.stand == destination_asylum)
   
   # Normalize the migration data into 0-100 scale.
   aslyum_UNHCR_2 <- aslyum_UNHCR_1 %>% ungroup() %>% 
@@ -329,6 +348,8 @@ Dashboard_plot(DT_GT)
 
 
 ```{r}
+#install.packages("shinythemes")
+library(shinythemes)
 library(shiny)
 library(plotly)
 library(gtrendsR)
@@ -336,7 +357,8 @@ library(readr)
 library(ggplot2)
 library(dplyr)
 
-ui<-fluidPage(
+##### user interface #############
+ui<-fluidPage(theme = shinytheme("cerulean"),
     titlePanel("Google Trends Index for Forecasting Migration"),
     sidebarLayout(
       sidebarPanel(
@@ -346,8 +368,8 @@ ui<-fluidPage(
         selectInput("lang", label=h5("Origin language"),choices= unique(iso$hl),selected = "en"),
           
         selectInput("queries", label = h5("Destination for Google Trends"),
-                   choices=unique(Migrationdata$Country),selected = "Germany" ),
-        selectInput("Migration.origin", label = h5("Migration Data origin"),
+                   choices=unique(Migrationdata$origin.stand),selected = "Germany" ),
+        selectInput("Migration.origin", label = h5("Migration flows Data origin"),
                    choices=unique(Migrationdata$Country.of.birth.nationality),selected = "Turkey" ),
         selectInput("Migration.destination", label = h5("Migration Destination"),
                    choices=unique(Migrationdata$Country),selected = "Germany"),
