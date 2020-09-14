@@ -1,0 +1,178 @@
+---
+title: "Updated App"
+author: "Imgesu Cetin"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Function
+```{r}
+#Top Hit functions
+#top hits function with graph
+
+world<-map_data("world")
+#top hits function
+top.hits<- function(world,search_keyword,time,category=0){
+  a<-gtrends(keyword = search_keyword,time = time,category = category)
+  country.hits<-a$interest_by_country%>%
+    filter(location %in% world$region, hits>0)%>%
+    mutate(region = location, hits = as.numeric(hits))%>%
+    select(region,hits)%>%
+    ungroup()
+  return(country.hits)
+}
+
+top.hits.map <- function(country.hits){
+  ggplot() +
+  geom_map(data = world,
+           map = world,
+           aes(x = long, y = lat, map_id = region),
+           fill="#ffffff", color="#ffffff", size=0.15) +
+  geom_map(data = country.hits,
+           map = world,
+           aes(fill = hits, map_id = region),
+           color="#ffffff", size=0.15) +
+  scale_fill_continuous(low = 'grey', high = 'red') +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+  
+  
+}
+
+data<-top.hits(world=world,search_keyword = "migration",time = "now 1-d",category = 555)
+top.hits.map(data)
+
+data
+is.data.frame(data)
+
+```
+
+Application
+```{r}
+ui<-fluidPage(theme = shinytheme("cerulean"),
+    titlePanel("Google Trends Index for Forecasting Migration"),
+    sidebarLayout(
+      sidebarPanel(
+        #select country
+        selectInput("geo", label = h5("Select Origin Country for Google Trends"),
+                    choices = unique(iso$iso), selected = "TR"),
+        selectInput("lang", label=h5("Origin language"),choices= unique(iso$hl),selected = "en"),
+          
+        selectInput("queries", label = h5("Destination for Google Trends and Historic Data"),
+                   choices=unique(asylum$destination.stand),selected = "Germany" ),
+
+        selectInput("Migration.origin", label = h5("Data origin"),
+                   choices=unique(asylum$origin.stand),selected = "Turkey" ),
+        selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
+                   choices=c("migration","asylum"),selected = "migration"),
+           # br() element to introduce extra vertical spacing ----
+                          # br(),
+        #______ input to select for top hits around the world-------#
+        
+        
+       selectInput("time.map", label = h5("Select time for top hits globally "),
+                   choices = c("now 1-H",
+                             "now 4-H"),
+                   selected = "now 4-H")),
+
+  #____________________________main panel output ____________________# 
+    mainPanel( tabsetPanel(type = "tabs",
+                           tabPanel("Plots", plotOutput("plot1",height=700)),
+                           tabPanel("Top Hits Map",plotOutput("map")),
+                           tabPanel("Top Hits table",dataTableOutput("mytable")))
+               
+                      ) #ends main panel  
+                   )#ends side bar part
+            
+        )#ends the fluid page
+
+```
+
+
+```{r}
+## server.R ##
+library(shiny)
+library(shinydashboard)
+library(gtrendsR)
+library(ggplot2)
+library(stringr)
+library(ggpubr)
+library("dplyr")
+library("stringr")
+library("tidyverse")
+library(ggpubr)
+
+
+server<-function(input, output) {
+
+
+    data("countries")
+  #output of data table
+
+
+  #this uses the newest function
+   dataInput <- reactive({
+     Dashboard_DT(Migrationdata,
+                 asylum,
+                 origin = input$Migration.origin,
+                 destination = input$queries,
+                 Year_from = 2005,
+                 Year_till = 2018,
+                 origin_asylum = input$Migration.origin,
+                 destination_asylum = input$queries,
+                 serach_terms = input$queries,
+                 origin_code = input$geo,
+                 language = input$lang,
+                 category = 555)})
+
+  #this uses the first original function
+     # Generate_comparison(serach_terms = input$queries,
+     #                      origin_code = input$geo,
+     #                       language = input$lang,
+      #                      origin = input$Migration.origin,
+      #                      destination = input$Migration.destination,
+       #                     origin_asylum = input$Asylum.origin,
+       #                     destination_asylum = input$Asylum.destination)
+   #plots our function of 12 plots
+   output$plot1<- renderPlot({
+     res<-dataInput()
+     Dashboard_plot(res)
+    
+    
+      
+    })
+   world<-map_data("world")
+
+     output$map <- renderPlot({
+       a<-top.hits(world,
+                search_keyword = input$migration.keyword,
+                time = input$time.map)
+       
+  top.hits.map(a)
+   })
+   data<- reactive({
+     gtrends(keyword = input$migration.keyword,
+                time = input$time.map)$interest_by_country%>%
+    filter(location %in% world$region, hits>0)%>%
+    mutate(region = location, hits = as.numeric(hits))%>%
+    select(region,hits)%>%
+    ungroup()%>%as.data.frame()
+   })
+   output$mytable <-renderDataTable({
+     data()
+     
+   })
+    
+}#ends server functioin
+
+shinyApp(ui=ui,server = server)
+```
+
+
+```{r}
+```
+
