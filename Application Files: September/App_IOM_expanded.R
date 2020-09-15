@@ -78,7 +78,7 @@ server<-function(input, output) {
                      serach_terms = input$queries,
                      origin_code = input$geo,
                      language = input$lang,
-                     category = 555)})
+                     category = "Immigration Policy & Border Issues")})
     
     #this uses the first original function
     # Generate_comparison(serach_terms = input$queries,

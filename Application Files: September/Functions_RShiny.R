@@ -290,13 +290,13 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
   
 }
 
-DT_GT <- Dashboard_DT(Migrationdata, asylum_applications_UNHCR,
-          origin = "Syria",destination = "Germany",
-          Year_from = 2005,Year_till = 2018,
-          origin_asylum = "Syria",
-          destination_asylum = "Germany",
-          serach_terms = 'Germany', origin_code = 'SYRIA',
-          language = "ar",category = "Immigration Policy & Border Issues")
+# DT_GT <- Dashboard_DT(Migrationdata, asylum_applications_UNHCR,
+#           origin = "Syria",destination = "Germany",
+#           Year_from = 2005,Year_till = 2018,
+#           origin_asylum = "Syria",
+#           destination_asylum = "Germany",
+#           serach_terms = 'Germany', origin_code = 'SYRIA',
+#           language = "ar",category = "Immigration Policy & Border Issues")
 
 # Visualization
 Dashboard_plot <- function(DT_GT){
