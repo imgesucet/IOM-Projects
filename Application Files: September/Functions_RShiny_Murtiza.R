@@ -5,7 +5,6 @@
 ###############################################################
 library(gtrendsR)
 library("dplyr")
-library(dplyr)
 library("stringr")
 library(ggplot2)
 library("tidyverse")
@@ -51,8 +50,13 @@ Cat <- force(categories)
 Cat_interest <- Cat %>% filter(Cat$name %>% str_detect("migration")) %>% 
   distinct() %>% mutate(id = as.integer(id))
 
+# Geo code VS origin country code
+Geo_vs_country <- read_csv("iso_country_lang_data.csv") 
+Geo_vs_country_origin <- Geo_vs_country %>% select(iso, country) 
+Geo_vs_country_origin1 <- Countries_gtrends %>% left_join(Geo_vs_country_origin, by = c("country_code" = "iso"))
 
-
+# origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name == "AFGHANISTAN" ),][[1]]
+# Geo_vs_country_origin1[which(Geo_vs_country_origin1$country == "Afghanistan" ),][[1]]
 
 ####################  Total migration OECD  ####################
 
@@ -81,6 +85,31 @@ Agg_filter_migration <- function(mig_data, origin,
   
 }
 
+# Without normalizing #
+Agg_filter_migration_without_norm <- function(mig_data, origin,
+                                 destination, Year_from, Year_till){
+  # Detect the Inflows and aggregate
+  Migrationdata_agg <- mig_data %>%  
+    filter(str_detect(Variable, "^Inflows")) %>% 
+    group_by(Country.of.birth.nationality, Country, Year) %>% 
+    summarise(Value = sum(Value))
+  # Filter by country of origin and destination
+  mig_data_1 <- Migrationdata_agg %>%  
+    filter(Country.of.birth.nationality == origin,
+           Country == destination,
+           Year > Year_from, Year < Year_till)
+  # Normalize the migration data into 0-100 scale.
+  mig_data_2 <- mig_data_1 %>%  ungroup() %>% 
+    select(Year, Value) %>%
+    mutate_if(is.integer, as.character) %>% 
+    mutate(migration_flow_total = Value) %>% 
+    select(-Value)
+  
+  return(mig_data_2)
+  
+}
+
+
 ######################### Asylum OECD   ####################
 # Function for Aggregating and filtering the Asylum-OECD
 Agg_filter_OECDasylum <- function(mig_data, origin,
@@ -107,6 +136,35 @@ Agg_filter_OECDasylum <- function(mig_data, origin,
   return(Asylum_OEDC_2)
   
 }
+
+# Without normalizing #
+Agg_filter_OECDasylum_without_norm <- function(mig_data, origin,
+                                  destination, Year_from, Year_till){
+  # Detect the Inflows and aggregate
+  Asylum_OEDC <-  mig_data %>% 
+    filter(str_detect(Variable, "^Inflows of asylum")) %>% 
+    group_by(Country.of.birth.nationality, Country, Year) %>% 
+    summarise(Value = sum(Value))
+  
+  # Filter by country of origin and destination
+  Asylum_OEDC_1 <- Asylum_OEDC %>%  
+    filter(Country.of.birth.nationality == origin,
+           Country == destination,
+           Year > Year_from, Year < Year_till)
+  
+  # Normalize the migration data into 0-100 scale.
+  Asylum_OEDC_2 <- Asylum_OEDC_1 %>%  ungroup() %>% 
+    select(Year, Value) %>%
+    mutate_if(is.integer, as.character) %>% 
+    mutate(Asylum_OEDC = Value) %>% 
+    select(-Value)
+  
+  return(Asylum_OEDC_2)
+  
+}
+
+
+
 # B <- Agg_filter_OECDasylum(Migrationdata,
 #                     origin = "Syria",
 #                     destination = "Germany",
@@ -143,11 +201,38 @@ Agg_UNHCR_asylum<- function(Asylum_UNHCR, origin_asylum,
   return(aslyum_UNHCR_2)
   
 }
+# Without normalizing
+Agg_UNHCR_asylum_without_norm<- function(Asylum_UNHCR, origin_asylum,
+                            destination_asylum){
+  
+  # Detect the Inflows and aggregate
+  Asylum_UNHCR_agg<-Asylum_UNHCR%>%
+    group_by(`Country of origin`,`Country of asylum`,Year) %>%
+    summarise(Value_asylum=sum(applied))
+  
+  # Filter by country of origin and destination
+  aslyum_UNHCR_1 <- Asylum_UNHCR_agg %>%  
+    filter(`Country of origin` == origin_asylum,
+           `Country of asylum` == destination_asylum)
+  
+  # Normalize the migration data into 0-100 scale.
+  aslyum_UNHCR_2 <- aslyum_UNHCR_1 %>% ungroup() %>% 
+    select(Year, Value_asylum) %>%
+    mutate(Year = as.character(Year),
+           Asylum_UNHCR = Value_asylum) %>% 
+    select(-Value_asylum)
+  
+  return(aslyum_UNHCR_2)
+  
+}
+
+
+
 
 # C <- Agg_UNHCR_asylum(asylum_applications_UNHCR,
 #                  "Syrian Arab Rep.",
 #                  "Germany")
-######################## Migration flows Data frame ################
+######################## Migration flows Data frame (normalized) ################
 Migration_DT <- function(Migrationdata, asylum_applications_UNHCR,
                          origin,destination,
                          Year_from,Year_till,
@@ -169,14 +254,36 @@ Migration_DT <- function(Migrationdata, asylum_applications_UNHCR,
   
   return(DT)
 }
-
+# 
 # DT <- Migration_DT(Migrationdata,asylum_applications_UNHCR,
 #              origin = "Syria",destination = "Germany",
 #              Year_from = 2005,Year_till = 2018,
 #              origin_asylum = "Syrian Arab Rep.",
 #              destination_asylum = "Germany")
-# 
 
+
+######################## Migration flows Data frame (without normalized) ################
+Migration_DT_without_norm <- function(Migrationdata, asylum_applications_UNHCR,
+                         origin,destination,
+                         Year_from,Year_till,
+                         origin_asylum, destination_asylum){
+  
+  Migration_OECD <- Agg_filter_migration_without_norm(Migrationdata, origin,
+                                         destination, Year_from, Year_till)
+  
+  Asylum_OECD <- Agg_filter_OECDasylum_without_norm(Migrationdata, origin,
+                                       destination, Year_from, Year_till)
+  
+  Asuylum_UNHCR <- Agg_UNHCR_asylum_without_norm(asylum_applications_UNHCR,
+                                    origin_asylum,
+                                    destination_asylum)
+  
+  DT <- Migration_OECD %>% 
+    left_join(Asylum_OECD, by = "Year") %>% 
+    left_join(Asuylum_UNHCR, by = "Year")
+  
+  return(DT)
+}
 
 
 ######################### Google trends data ######################
@@ -231,12 +338,12 @@ GT_dataframe <- function(serach_terms = NA, origin_code,
   
   return(GT_data)
 }
-# # 
+# 
 # A <- GT_dataframe(serach_terms = 'Germany', origin_code = 'SY',
 #          language = "ar",
 #          category = 555)
-# # 
-# # 
+# 
+# 
 # B <- Migration_DT(Migrationdata,asylum_applications_UNHCR,
 #                    origin = "Syria",destination = "Germany",
 #                    Year_from = 2005,Year_till = 2018,
@@ -244,16 +351,11 @@ GT_dataframe <- function(serach_terms = NA, origin_code,
 #                    destination_asylum = "Germany")
 # 
 # 
-# # # full data frame
-# DT_GT1 <- B %>% left_join(A, by = "Year")
-# origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  "SYRIA"),][[1]]
-# origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  "Syria"),][[1]]
-# destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  "Germany"),][[1]]
-# category_1 <- Cat_interest[which(Cat_interest$name == "Immigration Policy & Border Issues"),][[2]]
-# 
+# # full data frame
+# DT_GT <- B %>% left_join(A, by = "Year")
 
 
-# Generate the comparison dashboard
+# Generate the comparison dashboard with normalized migration data
 
 Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
                       origin,destination,
@@ -264,13 +366,16 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
                       language ,category){
   
   # Matching the Origin Country code
-  origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  # origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  origin_code_1 <- Geo_vs_country_origin1[which(Geo_vs_country_origin1$country ==  origin_code),][[1]]
+  
   # Matching the Origin asylum Country code
   origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  origin_asylum),][[1]]
   # Matching the Destination Country code
   destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  destination_asylum),][[1]]
   # Matching the Category code
   category_1 <- Cat_interest[which(Cat_interest$name == category),][[2]]
+
   
   
   DT <- Migration_DT(Migrationdata, asylum_applications_UNHCR,
@@ -298,7 +403,48 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
 #           serach_terms = 'Germany', origin_code = 'SYRIA',
 #           language = "ar",category = "Immigration Policy & Border Issues")
 
-# Visualization
+
+
+
+# Generate the comparison dashboard without normalized migration data
+Dashboard_DT_without_norm <- function(Migrationdata,asylum_applications_UNHCR,
+                         origin,destination,
+                         Year_from,Year_till,
+                         origin_asylum, destination_asylum,
+                         serach_terms,
+                         origin_code,
+                         language ,category){
+  
+  # Matching the Origin Country code
+  origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  # Matching the Origin asylum Country code
+  origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  origin_asylum),][[1]]
+  # Matching the Destination Country code
+  destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  destination_asylum),][[1]]
+  # Matching the Category code
+  category_1 <- Cat_interest[which(Cat_interest$name == category),][[2]]
+  
+  
+  DT <- Migration_DT_without_norm(Migrationdata, asylum_applications_UNHCR,
+                     origin,destination,
+                     Year_from,Year_till,
+                     origin_asylum_1, destination_asylum_1)
+  
+  # Google trends
+  GT <- GT_dataframe(serach_terms, origin_code_1,
+                     language, category_1)
+  
+  # full dataframe
+  DT_GT <- DT %>% left_join(GT, by = "Year")
+  
+  return(DT_GT)
+  
+  
+}
+
+
+######################################## Visualization ###########################################
+# with normalized
 Dashboard_plot <- function(DT_GT){
   # x axis scale
   Scale_x <- scale_x_continuous(breaks = waiver(), n.breaks = 7)
@@ -356,6 +502,126 @@ Dashboard_plot <- function(DT_GT){
 #                 fig.lab = "Syria to Germany", fig.lab.face = "bold"
 # )
 
+# without normalized
+Dashboard_plot_without_norm <- function(DT_GT){
+  # x axis scale
+  Scale_x <- scale_x_continuous(breaks = waiver(), n.breaks = 7)
+  # Migraiton total
+  A <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y=migration_flow_total),color = "blue", group = 1) + 
+    labs(title ="Migration Inflows", y = "", x= "") + Scale_x +
+    ylim(0,5e+5)
+  # Asylum OECD
+  B <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y=Asylum_OEDC),color = "red", group = 1) +
+    labs(title ="Asylum OECD", y = "",x= "", size = 8) + Scale_x+
+    ylim(0,5e+5)
+  # Asylum UNHCR
+  C <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y=Asylum_UNHCR),color = "red", group = 1) +
+    labs(title ="Asylum UNHCR", y = "",x= "") + xlim(2014,2017)+
+    ylim(0,5e+5)
+  
+  ######## Google Trends ##########
+  # Approach 1
+  p <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y=Approach_1_hits),color = "Green", group = 1) +
+    ylim(0,100) 
+  # Approach 2
+  q <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y = Approach_2_hits), color = "black",group = 1) +
+    labs(y = "A2", x= "") + ylim(0,100)
+  # Approach 3
+  d <- ggplot(data=DT_GT, aes(x=as.integer(Year))) +
+    geom_line(aes(y = Approach_3_hits), color = "navy",group = 1) +
+    labs(y = "A3", x= "") + ylim(0,100)
+  
+  
+  ggarrange(A,B,C,
+            p +labs(y="A1", x= "")+ Scale_x,
+            p +labs(y="", x= "")+ Scale_x,
+            p + labs(y="", x= "") + xlim(2014,2017),
+            q +labs(y="A2", x= "")+ Scale_x,
+            q +labs(y="", x= "")+ Scale_x,
+            q + labs(y="", x= "") + xlim(2014,2017),
+            d +labs(y="A3", x= "")+ Scale_x,
+            d +labs(y="", x= "")+ Scale_x,
+            d + labs(y="", x= "") + xlim(2014,2017),
+            heights = c(2, 2),
+            ncol = 3, nrow = 4)
+}
+# 
+Dashboard_plot_without_norm(DT_GT)
+########################################## Prediction Tab ###################################
+library("tseries")
+library("forecast")
+DT_GT_wn <- Dashboard_DT_without_norm(Migrationdata, asylum_applications_UNHCR,
+          origin = "Syria",destination = "Germany",
+          Year_from = 2005,Year_till = 2018,
+          origin_asylum = "Syria",
+          destination_asylum = "Germany",
+          serach_terms = 'Germany', origin_code = 'SYRIA',
+          language = "ar",category = "Immigration Policy & Border Issues")
+# fitting 
+tsdata <- DT_GT_wn %>% ungroup() %>% 
+  select(Asylum_UNHCR) %>% filter(row_number() >= (n() - 3)) %>%  
+  ts(start = 2014)
+
+fit <- auto.arima(tsdata,
+                  trace=T, 
+                  stepwise = T,
+                  stationary=T,
+                  approximation=FALSE,
+                  seasonal = F,
+                  lambda = 0)
+
+# checkresiduals(fit)
+arima_forcast <- forecast::forecast(fit, h = 3, lambda = 0, biasadj = TRUE)
+autoplot(tsdata) + autolayer(arima_forcast)
+DT_GT_wn
+
+
+
+# Function
+Predicting_migration <- function(DT_GT_wn){
+  # make it TS (Total)
+  tsdata_total <- DT_GT_wn %>% ungroup() %>% 
+    select(migration_flow_total) %>% 
+    ts(start = 2006)
+  # OECD Asylum
+  tsdata_asy_OECD <- DT_GT_wn %>% ungroup() %>% 
+    select(Asylum_OEDC) %>% 
+    ts(start = 2006)
+  # UNHCR Asylum
+  tsdata_asy_UNHCR <- DT_GT_wn %>% ungroup() %>% 
+    select(Asylum_UNHCR) %>% filter(row_number() >= (n() - 3)) %>%  
+    ts(start = 2014)
+  
+  # fit and predictions
+  forecast_mig <- list() 
+  for (tsdata in list(tsdata_total, tsdata_asy_OECD,tsdata_asy_UNHCR)) {
+    fit <- auto.arima(tsdata,
+                      trace=T,
+                      stepwise = T,
+                      stationary=T,
+                      approximation=FALSE,
+                      seasonal = F,
+                      lambda = 0)
+    name <- paste('prediction of: ',colnames(tsdata),sep='')
+    # forecast
+    arima_forecast <- forecast::forecast(fit, h = 3, lambda = 0, biasadj = TRUE)
+    forecast_mig[[name]] <- arima_forecast
+
+    
+  }
+  return(forecast_mig)
+  
+}
+Predicting_migration(DT_GT_wn)[1]
+
+autoplot(tsdata) + autolayer(Predicting_migration(DT_GT_wn)[[1]])
+
+#################################################################################################
 
 Origin_code <- list("World", "State", "Multiple regions", "Afghanistan (AF)", "Albania (AL)",
                  "Algeria (DZ)", "American Samoa (AS)", "Andorra (AD)", "Angola (AO)",

@@ -1,0 +1,34 @@
+---
+title: "Top Hits Script for Tuturial"
+author: "Imgesu Cetin"
+date: "9/15/2020"
+output: html_document
+---
+# step by step to make a function
+
+#This function will allow users to define the 'keyword' and 'time' to get the top hits for a particular keyword around the world.
+
+#this function allows it to be re-used whenever one needs to use the function
+#why I used this...
+
+#it's easy
+#simple
+
+
+#step one the function
+#produces data table
+```{r}
+
+
+
+```
+
+#takes data table and converts into heat map
+```{r}
+```
+
+
+```{r}
+```
+
+#
