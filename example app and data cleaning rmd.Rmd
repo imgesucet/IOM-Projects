@@ -58,6 +58,8 @@ asylumdata$Country.of.asylum.stand<-standardize.countrynames(asylumdata$Country.
 #new standardized varaibles
 write.csv(Migrationdata,"migrationdata_new.csv")
 write.csv(asylumdata,"asylumdata_new.csv")
+
+
 ```
 
 #shiny app examples 
@@ -146,7 +148,7 @@ shinyApp(ui,server)
 library(shinydashboard)
 data("countries")
 migration<-read.csv('migrationdata_new.csv')
-migration$
+migration$Country.of.birth.nationality
 ui<-fluidPage(
     dashboardHeader(title = "Google Trends"),
     titlePanel("Google Trends Index"),
@@ -159,10 +161,12 @@ ui<-fluidPage(
         
         selectInput("queries", label = h5("Destination"),
                    choices=list("Syria","Germany"),selected = "Germany" ),
-        selectInput("Migration.origin", label = h5("Migration Data origin"),
-                   choices=list("Syria"='a',"Germany"='b'),selected = "Germany"='b' ),
-        selectInput("Migration.destination", label = h5("Migration Destination"),
-                   choices=list("Syria"='c',"Germany"='d'),selected = "Germany"='d' ),
+        selectizeInput("Migration.origin", label = h5("Migration Data origin"),
+                   choices=unique(migration$Country.of.birth.nationality.stand),selected = "Germany" ),
+        selectizeInput("Migration.destination", label = h5("Migration Destination"),
+                   choices=unique(migration$Country.stand)),selected = "Germany"),
+        selectizeInput("Asylum.destination", label = h5("Asylum Destination"),
+                   choices=unique(asylumdata$`Country of origin`)),selected = "Germany"),
     
     ),
     mainPanel(      tabsetPanel(
@@ -198,13 +202,17 @@ server<-function(input, output) {
         plot(res)
     })
     dataInput1<- reactive({
-      input$a=migration$
+      a<- migration %>%
+        filter(Country.of.birth.nationality.stand == input$Migration.destination)
       
     })
     ouput$plot2<- renderPlot({
-      res<-
+      ggplot(dataInput1(),aes(x= Year,Value))+
+        geom_line()+
+        theme_bw()+
+        xtab
     })
-    
+  migration$  
 
     
 }

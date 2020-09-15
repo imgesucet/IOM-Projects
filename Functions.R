@@ -1,5 +1,5 @@
 # There are some functions I built for facilitating the repetitive work.
-# Do not hesitate to ask me if there is any question. -Murtiza
+# Do not hesitate to ask me if there is any question.---Murtiza
 
 # Function for aggregating the GT data as yearly basis.
 Agg_yearly <- function(GTdata){
@@ -15,7 +15,7 @@ Agg_yearly <- function(GTdata){
   
 }
 
-# Funciton for Migration data filtering
+# Function for Migration data filtering
 Filtering_migration <- function(mig_data, origin,
                                 destination, Year_from, Year_till){
   
@@ -39,6 +39,15 @@ Filtering_asylum<- function(Asylum_UNHCR_agg, origin_asylum,
   return(aslyum_data_New)
   
 }
+<<<<<<< HEAD
+=======
+
+# Generate the comparison plot
+Generate_comparison <- function(serach_terms = NA, origin_code,
+                                language = "en", origin,destination,
+                                category =0,
+                                origin_asylum, destination_asylum){
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a
 
 # Generate the comparison plot
 Generate_comparison <- function(serach_terms = NA, origin_code,
@@ -48,8 +57,13 @@ Generate_comparison <- function(serach_terms = NA, origin_code,
   
   # GT data
   GT<-gtrends(keyword = serach_terms,geo=c(origin_code), category = category,
+<<<<<<< HEAD
               time='2004-01-01 2017-12-31',hl=language,
               gprop = "web", onlyInterest = TRUE)
+=======
+                       time='2004-01-01 2017-12-31',hl=language,
+                       gprop = "web", onlyInterest = TRUE)
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a
   
   GT_year <- Agg_yearly(GT)  %>%
     ungroup() %>% 
@@ -65,8 +79,13 @@ Generate_comparison <- function(serach_terms = NA, origin_code,
   
   # Assuylum data
   Asylum_UNHCR <- Filtering_asylum(Asylum_UNHCR_agg,
+<<<<<<< HEAD
                                    origin_asylum,
                                    destination_asylum)
+=======
+                             origin_asylum,
+                             destination_asylum)
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a
   Asylum <- Asylum_UNHCR %>%  select(Year, Value_asylum) %>% 
     mutate(Year = as.character(Year))
   
@@ -75,7 +94,11 @@ Generate_comparison <- function(serach_terms = NA, origin_code,
   Migration_GT_bind <- Migration_1 %>% 
     left_join(GT_year, by = "Year") %>% 
     left_join(Asylum, by = "Year")
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a
   p <- ggplot(data=Migration_GT_bind, aes(x=Year)) +
     geom_line(aes(y=Value),color = "blue", group = 1) +
     labs(y="Migration Inflow")
@@ -92,7 +115,11 @@ Generate_comparison <- function(serach_terms = NA, origin_code,
   ggarrange(p, q, l,
             labels = c("Migration flow", "Search hits", "Assuylum application"),
             ncol = 1, nrow = 3)
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 1e3c14e508e463a699418398de0f581a2e79eb5a
 }
 
 

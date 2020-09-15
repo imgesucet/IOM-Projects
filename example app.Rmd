@@ -21,15 +21,11 @@ asylum<-read.csv('asylumdata_new.csv')
 #source("Function_Rshiny.R")
 library(shinydashboard)
 data("countries")
-#Migrationd<-read.csv('migrationdata_new.csv')
+Migrationdata<-read.csv('migrationdata_new.csv')
 library(readxl)
 iso<- read_excel("iso_country_lang_data.xlsx")
 
-str(Migrationdata$Year)
-str(asylum_applications_UNHCR$Year)
 
-unique(Migrationdata$Country)
-unique(Migrationdata$Country.of.birth.nationality)
 #standardize country names 
 library(StandardizeText)
 Migrationdata$origin.stand<-standardize.countrynames(Migrationdata$Country.of.birth.nationality,standard="iso",suggest="auto")
@@ -46,7 +42,8 @@ write.csv(asylum,"asylumdata_new.csv")
 ```
 ```{r}
 unique(asylum$origin.stand)
-asylum$
+unique(Migrationdata$destination.stand)
+#there is only 36 unique country names for the migration destination
 ```
 
 ```{r}
@@ -343,6 +340,52 @@ Dashboard_plot <- function(DT_GT){
            language = "en",category = 555)
 
 Dashboard_plot(DT_GT)
+
+DT_GT
+
+########
+#new function for maping by imgesu
+############
+#data
+world<-map_data("world")
+#top hits function
+top.hits<- function(world,search_keyword,time){
+  a<-gtrends(keyword = search_keyword,time = time)
+  country.hits<-a$interest_by_country%>%
+    filter(location %in% world$region, hits>0)%>%
+    mutate(region = location, hits = as.numeric(hits))%>%
+    select(region,hits)%>%
+    ungroup()
+  return(country.hits)
+}
+
+#top hits function with graph
+
+top.hits.map <- function(country.hits){
+  ggplot() +
+  geom_map(data = world,
+           map = world,
+           aes(x = long, y = lat, map_id = region),
+           fill="#ffffff", color="#ffffff", size=0.15) +
+  geom_map(data = country.hits,
+           map = world,
+           aes(fill = hits, map_id = region),
+           color="#ffffff", size=0.15) +
+  scale_fill_continuous(low = 'grey', high = 'red') +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+  
+  
+}
+
+data<-top.hits(world,"migration","now 1-d")
+top.hits.map(data)
+
+
+data
+
+
 ```
 
 
@@ -356,6 +399,7 @@ library(gtrendsR)
 library(readr)
 library(ggplot2)
 library(dplyr)
+library(DT)
 
 ##### user interface #############
 ui<-fluidPage(theme = shinytheme("cerulean"),
@@ -367,26 +411,34 @@ ui<-fluidPage(theme = shinytheme("cerulean"),
                     choices = unique(iso$iso), selected = "TR"),
         selectInput("lang", label=h5("Origin language"),choices= unique(iso$hl),selected = "en"),
           
-        selectInput("queries", label = h5("Destination for Google Trends"),
-                   choices=unique(Migrationdata$origin.stand),selected = "Germany" ),
-        selectInput("Migration.origin", label = h5("Migration flows Data origin"),
-                   choices=unique(Migrationdata$Country.of.birth.nationality),selected = "Turkey" ),
-        selectInput("Migration.destination", label = h5("Migration Destination"),
-                   choices=unique(Migrationdata$Country),selected = "Germany"),
-        selectInput("Asylum.destination", label = h5("Asylum Destination"),
-                   choices=unique(asylum$Country.of.asylum),selected = "Germany"),
-    selectInput("Asylum.origin", label = h5("Asylum Origin"),
-                   choices=unique(asylum$Country.of.origin),selected = "Turkey")),
-    
-    #puts all plots on different tabs. Maybe we can add graphs here
-    mainPanel( plotOutput("plot1",height=700)
-                
-                
+        selectInput("queries", label = h5("Destination for Google Trends and Historic Data"),
+                   choices=unique(asylum$destination.stand),selected = "Germany" ),
+
+        selectInput("Migration.origin", label = h5("Data origin"),
+                   choices=unique(asylum$origin.stand),selected = "Turkey" ),
+        selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
+                   choices=c("migration","asylum"),selected = "migration"),
+           # br() element to introduce extra vertical spacing ----
+                          # br(),
+        #______ input to select for top hits around the world-------#
         
-            )
+        
+       selectInput("time.map", label = h5("Select time for top hits globally "),
+                   choices = c("now 1-H",
+                             "now 4-H"),
+                   selected = "now 4-H")),
+
+  #____________________________main panel output ____________________# 
+    mainPanel( tabsetPanel(type = "tabs",
+                           tabPanel("Plots", plotOutput("plot1",height=700)),
+                           tabPanel("Top Hits Map",plotOutput("map"),DTOutput("mytable")),
+                           tabPanel("Top Hits table",))
+               
+                      ) #ends main panel  
+                   )#ends side bar part
             
-        )
-    )
+        )#ends the fluid page
+    
 
 
 
@@ -408,33 +460,24 @@ server<-function(input, output) {
 
 
     data("countries")
-    
-    #dataInput <- reactive({
-     #   gtrends(keyword = input$queries,
-     #           geo = input$geo,
-     #           time = input$time,
-     #           hl= input$lang)
-   # })
-    
-   # output$plot1 <- renderPlot({
-      #plot for all
-       # res <- dataInput()
-       # plot(res)
-   # })
+  #output of data table
+
+
   #this uses the newest function
    dataInput <- reactive({
      Dashboard_DT(Migrationdata,
                  asylum,
                  origin = input$Migration.origin,
-                 destination = input$Migration.destination,
+                 destination = input$queries,
                  Year_from = 2005,
-                 Year_till = 2015,
-                 origin_asylum = input$Asylum.origin,
-                 destination_asylum = input$Asylum.destination,
+                 Year_till = 2018,
+                 origin_asylum = input$Migration.origin,
+                 destination_asylum = input$queries,
                  serach_terms = input$queries,
                  origin_code = input$geo,
                  language = input$lang,
-                 category = 555)
+                 category = 555)})
+
   #this uses the first original function
      # Generate_comparison(serach_terms = input$queries,
      #                      origin_code = input$geo,
@@ -443,7 +486,7 @@ server<-function(input, output) {
       #                      destination = input$Migration.destination,
        #                     origin_asylum = input$Asylum.origin,
        #                     destination_asylum = input$Asylum.destination)
-    })
+   #plots our function of 12 plots
    output$plot1<- renderPlot({
      res<-dataInput()
      Dashboard_plot(res)
@@ -451,12 +494,127 @@ server<-function(input, output) {
     
       
     })
+   world<-map_data("world")
+  # dataMap <- reactive({
+  #   top.hits(world,
+  #            search_keyword = input$migration.keyword,
+  #               time = input$time.map,
+  #               category = 555)
+  #  })
+
+  
+
+     output$map <- renderPlot({
+       a<-top.hits(world,
+                search_keyword = input$migration.keyword,
+                time = input$time.map)
+       
+  top.hits.map(a)
+   })
+   
+   output$mytable <-renderDT({
+     a<-top.hits(world,search_keyword = input$migration.keyword,
+              time = input$time.map)
+     a()
+   })
     
-}
+}#ends server functioin
 
 shinyApp(ui=ui,server = server)
 
 
 ```
 
+```{r}
+
+#visualizing map of intensity of search terms
+library(dplyr)
+library(ggplot2)
+library(gtrendsR)
+library(maps)
+data('countries')
+data('categories')
+
+#ploting the world searches for all time according to the category of Visa and Immigration.
+a <- gtrends(keyword = "asylum", time = "now 4-H",category = 555)
+
+a$interest_by_country
+
+a$interest_by_country
+plot(a)
+
+a$interest_by_country
+```
+
+```{r}
+
+```
+
+# plotting for the world
+
+
+```{r}
+
+
+plot
+
+a$interest_by_region
+world<-map_data("world")
+world$region
+#world data for our visualization
+  a$interest_by_country %>%
+    filter(location %in% world$region, hits>0) %>%
+    mutate(region = location, hits = as.numeric(hits)) %>%
+    select(region,hits) -> my_df
+
+#res_world$interest_by_country %>%
+ # filter(location %in% world$region, hits > 0) %>%
+  #mutate(region = location, hits = as.numeric(hits)) %>%
+  #select(region, hits) -> my_df
+my_df%>%ggplot() +
+  geom_map(data = world,
+           map = world,
+           aes(x = long, y = lat, map_id = region),
+           fill="#ffffff", color="#ffffff", size=0.15) +
+  geom_map(data = my_df,
+           map = world,
+           aes(fill = hits, map_id = region),
+           color="#ffffff", size=0.15) +
+  scale_fill_continuous(low = 'grey', high = 'red') +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+
+#we can visualize this too see which countries are trending in searches for keywords regarding migration.
+```
+
+Notes:
+change iso code into country name
+have only origin, language and destination.
+adding prediction, as check box
+
+create a dataframe.
+
+1) similarity score
+*best performing score.
+*
+*
+2) use national data sources for ground truth. For a couple of examples. 
+  US/Germany-
+  *adding a tab for comparing international data base and national data base
+3) Prediction: Forecasting: checkbox to see 
+4) Which countries are searching for migration the most, 
+top 10 country 
+*top keywords according to map
+*compares google trends data
+*New trends: Which countries are using the 
+
+6) add get/pull data part in UI
+*add
+*taking out the category
+*make it fancy
+
+Notes August 31st______
+1) normalization according to population in the data set?
+2) adding worldwide to the searches plus adding data to our already made dataset, could get migration data for the world from World Bank. 
 

@@ -69,8 +69,6 @@ ui<-fluidPage(theme = shinytheme("cerulean"),
                    choices=unique(asylum$origin.stand),selected = "Turkey" ),
         selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
                    choices=c("migration","asylum"),selected = "migration"),
-           # br() element to introduce extra vertical spacing ----
-                          # br(),
         #______ input to select for top hits around the world-------#
         
         
@@ -100,9 +98,7 @@ library(shinydashboard)
 library(gtrendsR)
 library(ggplot2)
 library(stringr)
-library(ggpubr)
-library("dplyr")
-library("stringr")
+library(ggpubr)lhyhhx
 library("tidyverse")
 library(ggpubr)
 
@@ -117,7 +113,7 @@ server<-function(input, output) {
   #this uses the newest function
    dataInput <- reactive({
      Dashboard_DT(Migrationdata,
-                 asylum,
+                 asylum,kj
                  origin = input$Migration.origin,
                  destination = input$queries,
                  Year_from = 2005,

@@ -1,252 +1,103 @@
+# Load packages
 library(shiny)
-library(shinymaterial)
-library(plotly)
+library(dplyr)
+library(readr)
+
+#data 
+data<- migration %>% 
+  filter(str_detect(Variable, "^Inflows of asylum")) %>% 
+  group_by(Country.of.birth.nationality.stand, Country.stand, Year) %>% 
+  summarise(Value = sum(Value))%>%
+  filter(Year >= as.numeric(input$Year[1]),
+         Year <= as.numeric(input$Year[2]),
+         Country.of.birth.nationality.stand %in% input$Migration.origin,
+         Country.stand %in% input$Migration.destination)
+
+
+Agg_filter_migration(mig_data = migration,
+                     origin = input$Migration.origin,
+                     destination = input$Migration.destination,
+                     Year_from = input$Year[1],
+                     Year_till = input$Year[2])
+
+asylum<-read.csv('asylumdata_new.csv')
+data("countries")
+migration<-read.csv('migrationdata_new.csv')
+
+
+ui<-fluidPage(
+  titlePanel("Google Trends Index"),
+  sidebarLayout(sidebarPanel(
+    #select country
+    selectInput("geo", label = h5("Select Country"),
+                choices = list("US","SY"), selected = "SY"),
+    selectInput("time", label=h5("Date"),
+                choices = list("all",'today+5-y'), selected = "all"),
+    selectInput("lang", label=h5("language"),choices= list('ab','en','fr'),selected = "en"),
+    
+    selectInput("queries", label = h5("Destination"),
+                choices=list("Syria","Germany"),selected = "Germany" ),
+    selectizeInput("Migration.origin", label = h5("Migration Data origin"),
+                   choices=unique(migration$Country.of.birth.nationality.stand),selected = "Germany" ),
+    selectizeInput("Migration.destination", label = h5("Migration Destination"),
+                   choices=unique(migration$Country.stand),selected = "Germany"),
+    selectizeInput("Asylum.destination", label = h5("Asylum Destination"),
+                   choices=unique(asylum$Country.of.asylum.stand),selected = "Germany"),
+    selectizeInput("Asylum.origin", label = h5("Asylum Origin"),
+                   choices=unique(asylum$Country.of.origin.stand),selected = "Germany")),
+    
+    #puts all plots on different tabs. Maybe we can add graphs here
+    mainPanel(plotOutput(outputId = "plot1",height=500),
+      plotOutput(outputId = "plot2",height=500))
+      
+    )
+    )
+    
+  
+
+
+
+
+
+## server.R ##
+library(shiny)
+library(shinydashboard)
 library(gtrendsR)
 
-ui <- material_page(title = "Google Trends using gtrends",
-                    tags$br(),
-                    material_row(
-                        material_column(
-                            width = 2,
-                            material_card(
-                                title = "",
-                                depth = 4,
-                                
-                                material_text_box(
-                                    input_id = "vec1",
-                                    label = "Enter Trends",
-                                    color = "#ef5350"
-                                ),
-                                material_dropdown(
-                                    input_id = "geography",
-                                    label = "Country",
-                                    choices = list(
-                                        "Worldwide",
-                                        "Afghanistan",
-                                        "Albania",
-                                        "Algeria",
-                                        "Angola",
-                                        "Argentina",
-                                        "Armenia",
-                                        "Australia",
-                                        "Austria",
-                                        "Azerbaijan",
-                                        "Bahamas",
-                                        "Bahrain",
-                                        "Bangladesh",
-                                        "Belarus",
-                                        "Belgium",
-                                        "Botswana",
-                                        "Brazil",
-                                        "Bulgaria",
-                                        "Burkina Faso",
-                                        "Burundi",
-                                        "Cambodia",
-                                        "Cameroon",
-                                        "Canada",
-                                        "Chad",
-                                        "Chile",
-                                        "China",
-                                        "Colombia",
-                                        "Cuba",
-                                        "Cyprus",
-                                        "Czech Republic",
-                                        "Denmark",
-                                        "Djibouti",
-                                        "Ecuador",
-                                        "Egypt",
-                                        "Equatorial Guinea",
-                                        "Eritrea",
-                                        "Estonia",
-                                        "Ethiopia",
-                                        "Finland",
-                                        "France",
-                                        "Gabon",
-                                        "Gambia",
-                                        "Georgia",
-                                        "Germany",
-                                        "Ghana",
-                                        "Greece",
-                                        "Hong Kong",
-                                        "Hungary",
-                                        "Iceland",
-                                        "India",
-                                        "Indonesia",
-                                        "Iran",
-                                        "Iraq",
-                                        "Ireland",
-                                        "Israel",
-                                        "Italy",
-                                        "Jamaica",
-                                        "Japan",
-                                        "Jordan",
-                                        "Kazakhstan",
-                                        "Kenya",
-                                        "Kiribati",
-                                        "Korea (North)",
-                                        "Korea (South)",
-                                        "Kuwait",
-                                        "Kyrgyzstan",
-                                        "Lebanon",
-                                        "Liberia",
-                                        "Libya",
-                                        "Macedonia",
-                                        "Madagascar",
-                                        "Malawi",
-                                        "Malaysia",
-                                        "Mali",
-                                        "Malta",
-                                        "Mexico",
-                                        "Morocco",
-                                        "Mozambique",
-                                        "Namibia",
-                                        "Nepal",
-                                        "Netherlands",
-                                        "New Zealand",
-                                        "Niger",
-                                        "Nigeria",
-                                        "Norway",
-                                        "Oman",
-                                        "Pakistan",
-                                        "Paraguay",
-                                        "Peru",
-                                        "Philippines",
-                                        "Poland",
-                                        "Portugal",
-                                        "Qatar",
-                                        "Romania",
-                                        "Russian Federation",
-                                        "Rwanda",
-                                        "Saudi Arabia",
-                                        "Senegal",
-                                        "Serbia",
-                                        "Sierra Leone",
-                                        "Singapore",
-                                        "Somalia",
-                                        "South Africa",
-                                        "Spain",
-                                        "Sudan",
-                                        "Swaziland",
-                                        "Sweden",
-                                        "Switzerland",
-                                        "Syria",
-                                        "Taiwan",
-                                        "Tajikistan",
-                                        "Tanzania",
-                                        "Thailand",
-                                        "Togo",
-                                        "Tunisia",
-                                        "Turkey",
-                                        "Turkmenistan",
-                                        "Uganda",
-                                        "Ukraine",
-                                        "United Arab Emirates",
-                                        "United Kingdom",
-                                        "United States",
-                                        "Uzbekistan",
-                                        "Venezuela",
-                                        "Viet Nam",
-                                        "Yemen",
-                                        "Zaire",
-                                        "Zambia",
-                                        "Zimbabwe"
-                                    ),
-                                    selected = "United States"
-                                ),
-                                material_dropdown(
-                                    input_id = "period",
-                                    label = "Time Period",
-                                    choices = c(
-                                        "Last day",
-                                        "Last seven days",
-                                        "Past 30 days",
-                                        "Past 90 days",
-                                        "Past 12 months",
-                                        "Last five years"
-                                    ),
-                                    selected = "Last five years"
-                                ),
-                                submitButton("Submit")
-                                
-                                #
-                                #         material_button(
-                                #           input_id = "Submit",
-                                #           label = "Update",
-                                #           color = "deep-orange"
-                                #         )
-                            )
-                        ),
-                        material_column(
-                            width = 9,
-                            material_card(
-                                title = "Google Trends",
-                                depth = 4,
-                                plotlyOutput("gtrends_plot")
-                            )
-                        )
-                    ))
 
-#server aspect 
-server <- function(input, output, session) {
-    ### Get Country Code
-    library(gtrendsR)
-    library(shinymaterial)
-    library(plotly)
-    geo <- reactive({
-        if (input$geography == "Worldwide") {
-            ""
-        }
-        
-        else{
-            countrycode(input$geography, 'country.name', 'iso2c')
-        }
-        
-    })
+server<-function(input, output) {
+  library(readr)
+  asylum <-read_csv('asylumdata_new.csv')
+  data("countries")
+  migration<-read_csv('migrationdata_new.csv')
+  
+  dataInput <- reactive({
+    dashboard(keyword = input$queries,
+              geo = input$geo,
+              time = input$time,
+              hl= input$lang)
+  })
+  
+  output$plot1 <- renderPlot({
+    #plot for all
+    res <- dataInput()
+    plot(res)
+  })
+  dataInput1<- reactive({
+    a<- migration %>%
+      filter(Country.of.birth.nationality.stand == input$Migration.destination)
     
-    ### Time
-    start_date <- reactive({
-        if (input$period == "Last five years") {
-            "today+5-y"
-        }
-        else if (input$period == "Past 12 months") {
-            "today 12-m"
-        }
-        else if (input$period == "Past 90 days") {
-            "today 3-m"
-        }
-        else if (input$period == "Past 30 days") {
-            "today 1-m"
-        }
-        else if (input$period == "Last seven days") {
-            "now 7-d"
-        }
-        else if (input$period == "Last  day") {
-            "now 1-d"
-        }
-    })
-    
-    
-    out <- reactive({
-        if (length(input$vec1) > 0) {
-            unlist(strsplit(input$vec1, ","))
-        }
-    })
-    
-    #### Eg : gtrends(keyword = NA, geo = "", time = "today+5-y")
-    mk <- reactive({
-        if (length(input$vec1 != 0))
-            req(input$vec1)
-        {
-            gtrends(keyword = out(),
-                    time = start_date(),
-                    geo = geo())
-            }
-    })
-    
-    #Plot the Trend
-    output$gtrends_plot <- renderPlotly({
-        plot(mk())
-    })
-    
-}
-shinyApp(ui,server)
+  })
+  ouput$plot2 <- renderPlot({
+    ggplot(dataInput1(),aes(x= Year,Value))+
+      geom_line()+
+      theme_bw()+
+      xlab("Year")+
+      ylab("Number of Migration")+
+      ggtitle("Migration flows over time")
+
+  
+})}
+
+shinyApp(ui=ui,server=server)
+
