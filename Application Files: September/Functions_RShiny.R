@@ -169,7 +169,7 @@ Migration_DT <- function(Migrationdata, asylum_applications_UNHCR,
   
   return(DT)
 }
-# 
+
 # DT <- Migration_DT(Migrationdata,asylum_applications_UNHCR,
 #              origin = "Syria",destination = "Germany",
 #              Year_from = 2005,Year_till = 2018,
@@ -231,12 +231,12 @@ GT_dataframe <- function(serach_terms = NA, origin_code,
   
   return(GT_data)
 }
-# 
+# # 
 # A <- GT_dataframe(serach_terms = 'Germany', origin_code = 'SY',
 #          language = "ar",
 #          category = 555)
-# 
-# 
+# # 
+# # 
 # B <- Migration_DT(Migrationdata,asylum_applications_UNHCR,
 #                    origin = "Syria",destination = "Germany",
 #                    Year_from = 2005,Year_till = 2018,
@@ -244,8 +244,13 @@ GT_dataframe <- function(serach_terms = NA, origin_code,
 #                    destination_asylum = "Germany")
 # 
 # 
-# # full data frame
-# DT_GT <- B %>% left_join(A, by = "Year")
+# # # full data frame
+# DT_GT1 <- B %>% left_join(A, by = "Year")
+# origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  "SYRIA"),][[1]]
+# origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  "Syria"),][[1]]
+# destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  "Germany"),][[1]]
+# category_1 <- Cat_interest[which(Cat_interest$name == "Immigration Policy & Border Issues"),][[2]]
+# 
 
 
 # Generate the comparison dashboard
@@ -258,10 +263,13 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
                       origin_code,
                       language ,category){
   
-  
+  # Matching the Origin Country code
   origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  # Matching the Origin asylum Country code
   origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  origin_asylum),][[1]]
+  # Matching the Destination Country code
   destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  destination_asylum),][[1]]
+  # Matching the Category code
   category_1 <- Cat_interest[which(Cat_interest$name == category),][[2]]
   
   
@@ -282,13 +290,13 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
   
 }
 
-# DT_GT <- Dashboard_DT(Migrationdata, asylum_applications_UNHCR,
-#           origin = "Syria",destination = "Germany",
-#           Year_from = 2005,Year_till = 2018,
-#           origin_asylum = "Syrian Arab Rep.",
-#           destination_asylum = "Germany",
-#           serach_terms = 'Germany', origin_code = 'SY',
-#           language = "ar",category = 555)
+DT_GT <- Dashboard_DT(Migrationdata, asylum_applications_UNHCR,
+          origin = "Syria",destination = "Germany",
+          Year_from = 2005,Year_till = 2018,
+          origin_asylum = "Syria",
+          destination_asylum = "Germany",
+          serach_terms = 'Germany', origin_code = 'SYRIA',
+          language = "ar",category = "Immigration Policy & Border Issues")
 
 # Visualization
 Dashboard_plot <- function(DT_GT){
