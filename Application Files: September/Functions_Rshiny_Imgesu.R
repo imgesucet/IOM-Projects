@@ -14,6 +14,7 @@ library(ggpubr)
 library("tidyverse")
 library(ggpubr)
 library(shinythemes)
+library(DT)
 
 #iso data
 iso <- read_csv("iso_country_lang_data.csv")

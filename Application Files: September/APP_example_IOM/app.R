@@ -24,24 +24,27 @@ ui<-fluidPage(
                      selectInput("lang", label=h5("language"),
                                  choices= list('ab','en','fr','es'),selected = "en"),
                      
+                     selectInput("category", label = h5("Category"),
+                                 choices=unique(Cat_interest$name),selected = "Germany" ),
+                     
                      selectInput("origin", label = h5("Origin of Migrants"),
                                  choices=unique(Migrationdata$Country.of.birth.nationality),selected = "Syria" ),
                      
                      selectInput("destination", label = h5("Destination of Migrants"),
                                  choices=unique(Migrationdata$Country),selected = "Germany" ),
-                     #______ Migration keywords for top searches -------#
-                     
-                     selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
-                                 choices=c("migration","asylum"),selected = "migration"),
-                     
-                     #______ input to select for top hits around the world in regards to time-------#
-                     
-                     selectInput("time.map", label = h5("Select time for top hits globally "),
-                                 choices = c("now 1-H",
-                                             "now 4-H"),
-                                 selected = "now 4-H")),
+        #______ Migration keywords for top searches -------#
         
-        #____________________________main panel output ____________________# 
+        selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
+                    choices=c("migration","asylum"),selected = "migration"),
+        
+        #______ input to select for top hits around the world in regards to time-------#
+        
+        selectInput("time.map", label = h5("Select time for top hits globally "),
+                    choices = c("now 1-H",
+                                "now 4-H"),
+                    selected = "now 4-H")),
+    
+    #____________________________main panel output ____________________# 
         mainPanel( tabsetPanel(type = "tabs",
                                tabPanel("Plots", plotOutput("plot1",height=700)),
                                tabPanel("Top Hits Map",plotOutput("map")),
