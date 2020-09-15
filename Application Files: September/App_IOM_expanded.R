@@ -1,6 +1,6 @@
 # Source -------------------------------------------------------------------
 source("Functions_Rshiny_Imgesu.R")
-source("Functions_RShiny.R")
+source("Functions_RShiny_Murtiza.R")
 
 
 
@@ -118,6 +118,6 @@ server<-function(input, output) {
         
     })
     
-}#ends server functioin
+}#ends server function
 
 shinyApp(ui=ui,server = server)
