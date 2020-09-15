@@ -50,8 +50,13 @@ Cat <- force(categories)
 Cat_interest <- Cat %>% filter(Cat$name %>% str_detect("migration")) %>% 
   distinct() %>% mutate(id = as.integer(id))
 
+# Geo code VS origin country code
+Geo_vs_country <- read_csv("iso_country_lang_data.csv") 
+Geo_vs_country_origin <- Geo_vs_country %>% select(iso, country) 
+Geo_vs_country_origin1 <- Countries_gtrends %>% left_join(Geo_vs_country_origin, by = c("country_code" = "iso"))
 
-
+# origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name == "AFGHANISTAN" ),][[1]]
+# Geo_vs_country_origin1[which(Geo_vs_country_origin1$country == "Afghanistan" ),][[1]]
 
 ####################  Total migration OECD  ####################
 
@@ -361,13 +366,16 @@ Dashboard_DT <- function(Migrationdata,asylum_applications_UNHCR,
                       language ,category){
   
   # Matching the Origin Country code
-  origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  # origin_code_1 <- Countries_gtrends[which(Countries_gtrends$country_name ==  origin_code),][[1]]
+  origin_code_1 <- Geo_vs_country_origin1[which(Geo_vs_country_origin1$country ==  origin_code),][[1]]
+  
   # Matching the Origin asylum Country code
   origin_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  origin_asylum),][[1]]
   # Matching the Destination Country code
   destination_asylum_1 <- Country_migration[which(Country_migration$OECD_name ==  destination_asylum),][[1]]
   # Matching the Category code
   category_1 <- Cat_interest[which(Cat_interest$name == category),][[2]]
+
   
   
   DT <- Migration_DT(Migrationdata, asylum_applications_UNHCR,
@@ -544,7 +552,74 @@ Dashboard_plot_without_norm <- function(DT_GT){
 }
 # 
 Dashboard_plot_without_norm(DT_GT)
+########################################## Prediction Tab ###################################
+library("tseries")
+library("forecast")
+DT_GT_wn <- Dashboard_DT_without_norm(Migrationdata, asylum_applications_UNHCR,
+          origin = "Syria",destination = "Germany",
+          Year_from = 2005,Year_till = 2018,
+          origin_asylum = "Syria",
+          destination_asylum = "Germany",
+          serach_terms = 'Germany', origin_code = 'SYRIA',
+          language = "ar",category = "Immigration Policy & Border Issues")
+# fitting 
+tsdata <- DT_GT_wn %>% ungroup() %>% 
+  select(Asylum_UNHCR) %>% filter(row_number() >= (n() - 3)) %>%  
+  ts(start = 2014)
 
+fit <- auto.arima(tsdata,
+                  trace=T, 
+                  stepwise = T,
+                  stationary=T,
+                  approximation=FALSE,
+                  seasonal = F,
+                  lambda = 0)
+
+# checkresiduals(fit)
+arima_forcast <- forecast::forecast(fit, h = 3, lambda = 0, biasadj = TRUE)
+autoplot(tsdata) + autolayer(arima_forcast)
+DT_GT_wn
+
+
+
+# Function
+Predicting_migration <- function(DT_GT_wn){
+  # make it TS (Total)
+  tsdata_total <- DT_GT_wn %>% ungroup() %>% 
+    select(migration_flow_total) %>% 
+    ts(start = 2006)
+  # OECD Asylum
+  tsdata_asy_OECD <- DT_GT_wn %>% ungroup() %>% 
+    select(Asylum_OEDC) %>% 
+    ts(start = 2006)
+  # UNHCR Asylum
+  tsdata_asy_UNHCR <- DT_GT_wn %>% ungroup() %>% 
+    select(Asylum_UNHCR) %>% filter(row_number() >= (n() - 3)) %>%  
+    ts(start = 2014)
+  
+  # fit and predictions
+  forecast_mig <- list() 
+  for (tsdata in list(tsdata_total, tsdata_asy_OECD,tsdata_asy_UNHCR)) {
+    fit <- auto.arima(tsdata,
+                      trace=T,
+                      stepwise = T,
+                      stationary=T,
+                      approximation=FALSE,
+                      seasonal = F,
+                      lambda = 0)
+    name <- paste('prediction of: ',colnames(tsdata),sep='')
+    # forecast
+    arima_forecast <- forecast::forecast(fit, h = 3, lambda = 0, biasadj = TRUE)
+    forecast_mig[[name]] <- arima_forecast
+
+    
+  }
+  return(forecast_mig)
+  
+}
+Predicting_migration(DT_GT_wn)[1]
+
+autoplot(tsdata) + autolayer(Predicting_migration(DT_GT_wn)[[1]])
 
 #################################################################################################
 

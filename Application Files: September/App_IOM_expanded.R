@@ -12,24 +12,24 @@ ui<-fluidPage(theme = shinytheme("cerulean"),
                       
                       #______ input to select 'origin' AKA geolocation of search-------#
                       
-                      selectInput("geo", label = h5("Origin Country"),
-                                  choices = unique(Countries_gtrends$country_name), selected = "SYRIA"),
+                      selectInput("geo", label = h5("Origin code"),
+                                  choices = unique(Geo_vs_country_origin1$country), selected = "Syria"),
                       
                       #______ language option -------#
                       
-                      selectInput("lang", label=h5("Origin language"),
-                                  choices= unique(iso$hl),selected = "en"),
+                      # selectInput("lang", label=h5("Origin language"),
+                      #             choices= unique(iso$hl),selected = "en"),
                       
                       #______ search term AKA all countries as destination-------#
                       
-                      selectInput("queries", label = h5("Destination for Google Trends and Historic Data"),
+                      selectInput("destination", label = h5("Destination Country"),
                                   choices=unique(Migrationdata$Country), selected = "Germany" ),
                      
                        #______ input to select for top hits around the world-------#
                       
-                      selectInput("Migration.origin", label = h5("Data origin"),
-                                  choices=unique(Migrationdata$Country),selected = "Turkey" ),
-                      
+                      # selectInput("Migration.origin", label = h5("Origin Country"),
+                      #             choices=unique(Migrationdata$Country.of.birth.nationality),selected = "Syria" ),
+                      # 
                       #______ Migration keywords for top searches -------#
                       
                       selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
@@ -69,15 +69,15 @@ server<-function(input, output) {
     dataInput <- reactive({
         Dashboard_DT(Migrationdata,
                      asylum_applications_UNHCR,
-                     origin = input$Migration.origin,
-                     destination = input$queries,
+                     origin = input$geo,
+                     destination = input$destination,
                      Year_from = 2005,
                      Year_till = 2018,
-                     origin_asylum = input$Migration.origin,
-                     destination_asylum = input$queries,
-                     serach_terms = input$queries,
+                     origin_asylum = input$geo,
+                     destination_asylum = input$destination,
+                     serach_terms = input$destination,
                      origin_code = input$geo,
-                     language = input$lang,
+                     language = "en",
                      category = "Immigration Policy & Border Issues")})
     
     #this uses the first original function
