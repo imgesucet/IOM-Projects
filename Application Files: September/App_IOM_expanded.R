@@ -36,25 +36,48 @@ ui<-fluidPage(theme = shinytheme("cerulean"),
                       
                       
                       selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
-                                  choices=c("migration","asylum"),selected = "migration"),
+                                  choices=c("migration","asylum","immigrate","embassy","legalization","refugee","undocumented","Schengen","Visa","Naturalization"),selected = "migration"),
                       
                       #______ input to select for top hits around the world in regards to time-------#
                      
                      selectInput("time.map", label = h5("Select time for top hits globally "),
-                                 choices = c("now 1-H",
-                                             "now 4-H",
-                                             "now 1-d",
+                                 choices = c("now 1-H"="last hour",
+                                             "now 4-H"="last four hours",
+                                             "now 1-d"="last day",
                                              "now 7-d",
                                              "today 1-m",
-                                             "today 3-m",),
+                                             "today 3-m"),
                                  selected = "now 4-H")),
         
         #____________________________main panel output ____________________# 
         mainPanel( tabsetPanel(type = "tabs",
                                tabPanel("Specification Plots", plotOutput("plot1",height=700),dataTableOutput("similarity.table"),textOutput("selected_var")),
                                tabPanel("Prediction", plotOutput("predict",height = 700)),
-                               tabPanel("Top Hits Map",plotOutput("map")),
-                               tabPanel("Top Hits table",dataTableOutput("mytable")))
+                               tabPanel("Top Hits Map and Table", fluidRow(column(12,
+                                                                        h1("Top Hits Map for searches for Migration"),
+                                                                        
+                                   
+                               )),
+                               hr(),
+                               fluidrow(sidebarPanel(with=3,
+                                                     h4("Options For Top Searches Around the World"),
+                                                     helpText("Choose search term and time frame to plot map and table"),
+                                                     selectInput("migration.keyword", label = h5("Select Keyword for top hits globaly"),
+                                                                 choices=c("migration","asylum","immigrate","embassy","legalization","refugee","undocumented","Schengen","Visa","Naturalization"),
+                                                                 selected = "migration"),
+                                                     selectInput("time.map", label = h5("Select time for top hits globally "),
+                                                                 choices = c("now 1-H"="last hour",
+                                                                             "now 4-H"="last four hours",
+                                                                             "now 1-d"="last day",
+                                                                             "now 7-d",
+                                                                             "today 1-m",
+                                                                             "today 3-m"),
+                                                                 selected = "now 4-H")),
+                                        mainPanel(plotOutput("map"),dataTableOutput("mytable")))
+                               )#closes options for 3rd tab for map and table
+        )#closes all tabs
+                                                     
+
                    
         ) #ends main panel  
     )#ends side bar part
@@ -155,3 +178,8 @@ server<-function(input, output) {
 
 # Run ---------------------------------------------------------------------
 shinyApp(ui,server)
+
+
+
+
+
